@@ -71,7 +71,7 @@ app.get('/checkout', (req, res) => {
 
 // Order confirmation page after checkout simulation
 app.get('/order-confirmation', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'order-confirmation.html'));
+    res.sendFile(path.join(__dirname, 'public', 'order_confirmation.html'));
 });
 
 // Login form page
@@ -87,12 +87,12 @@ app.get('/signup', (req, res) => {
 
 // Admin — view products list
 app.get('/admin/products', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-products.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin_products.html'));
 });
 
 // Admin — add/edit product form
 app.get('/admin/products/add', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-product-form.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
 });
 
 
