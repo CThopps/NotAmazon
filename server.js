@@ -51,7 +51,7 @@ app.get('/', (req, res) => {
 
 // Products catalogue listing page
 app.get('/products', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'products.html'));
+    res.sendFile(path.join(__dirname, 'public', 'catalogue.html'));
 });
 
 // Individual product page (static for now)
