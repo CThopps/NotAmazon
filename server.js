@@ -49,8 +49,8 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Products catalogue listing page
-app.get('/products', (req, res) => {
+// Catalogue listing page
+app.get('/catalogue', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'catalogue.html'));
 });
 
