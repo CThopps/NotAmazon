@@ -12,6 +12,61 @@ const app = express();
 // Access it at: http://localhost:8080
 const port = 8080;
 
+
+/**
+ * Fake Database (In-Memory)
+ * Theses arrays will act as our "database" for now until we add the SQL part.
+ * In a real application, this data would be stored in a database like MySQL.
+ */
+
+
+// Product list – shown on catalogue page and used by admin
+const products = [
+    {
+        id: 1,
+        name: "Basic Keyboard",
+        price: 49.99,
+        stock: 10,
+        description: "A simple mechanical keyboard with blue switches."
+    },
+    {
+        id: 2,
+        name: "Gaming Mouse",
+        price: 39.99,
+        stock: 15,
+        description: "High DPI gaming mouse with customizable buttons."
+    },
+    {
+        id: 3,
+        name: "Laptop Stand",
+        price: 29.99,
+        stock: 20,
+        description: "Adjustable aluminum laptop stand for better ergonomics."
+    }
+];
+
+// Users – login system will use this
+// Pre-made admin + customer
+const users = [
+    {
+        name: "Admin User",
+        email: "admin@notamazon.com",
+        password: "admin123",        // plain text ONLY for this project
+        role: "admin"
+    },
+    {
+        name: "Test Customer",
+        email: "customer@notamazon.com",
+        password: "customer123",
+        role: "customer"
+    }
+];
+
+// Orders – checkout will push new order objects here
+const orders = [];  
+let nextOrderId = 1; // simple counter for unique order IDs
+
+
 /**
  * MIDDLEWARE SETUP
  * Middleware = Code that runs BEFORE your routes
