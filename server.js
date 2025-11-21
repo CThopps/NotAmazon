@@ -150,6 +150,25 @@ app.get('/admin/products/add', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
 });
 
+// ----------------------------------------------------------
+// DEBUG ROUTES (TEMPORARY) - To test the fake database
+// ----------------------------------------------------------
+
+// View products
+app.get('/debug/products', (req, res) => {
+    res.json(products);
+});
+
+// View users (admin + test customer)
+app.get('/debug/users', (req, res) => {
+    res.json(users);
+});
+
+// View orders (should be empty right now)
+app.get('/debug/orders', (req, res) => {
+    res.json(orders);
+});
+
 
 // ----------------------------------------------------------
 // START THE SERVER
