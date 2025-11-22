@@ -21,29 +21,67 @@
     <h2>Your Cart</h2>
 
     <section>
+
+        <!-- ---------------------- -->
+        <!-- CART ITEM 1 (Example) -->
+        <!-- ---------------------- -->
         <article>
             <h3>Product 1</h3>
             <p>Price: $10.00</p>
-            <label>Qty:
-                <input type="number" value="1" min="1">
-            </label>
-            <button>Remove</button>
+
+            <!-- Update quantity for item 1 -->
+            <form method="POST" action="/cart/update">
+                <input type="hidden" name="productId" value="1">
+
+                <label>
+                    Qty:
+                    <input type="number" name="newQuantity" value="1" min="1">
+                </label>
+
+                <button type="submit">Update</button>
+            </form>
+
+            <!-- Remove item 1 -->
+            <form method="POST" action="/cart/remove">
+                <input type="hidden" name="productId" value="1">
+                <button type="submit">Remove</button>
+            </form>
         </article>
 
+        <!-- ---------------------- -->
+        <!-- CART ITEM 2 (Example) -->
+        <!-- ---------------------- -->
         <article>
             <h3>Product 2</h3>
             <p>Price: $15.00</p>
-            <label>Qty:
-                <input type="number" value="2" min="1">
-            </label>
-            <button>Remove</button>
+
+            <!-- Update quantity for item 2 -->
+            <form method="POST" action="/cart/update">
+                <input type="hidden" name="productId" value="2">
+
+                <label>
+                    Qty:
+                    <input type="number" name="newQuantity" value="2" min="1">
+                </label>
+
+                <button type="submit">Update</button>
+            </form>
+
+            <!-- Remove item 2 -->
+            <form method="POST" action="/cart/remove">
+                <input type="hidden" name="productId" value="2">
+                <button type="submit">Remove</button>
+            </form>
         </article>
+
     </section>
 
     <p><strong>Total: $40.00</strong></p>
 
-    <button>Update Cart</button>
-    <a href="checkout.html"><button>Proceed to Checkout</button></a>
+    <!-- Proceed to checkout -->
+    <form method="POST" action="/checkout">
+        <button type="submit">Proceed to Checkout</button>
+    </form>
 </main>
 
 </body>

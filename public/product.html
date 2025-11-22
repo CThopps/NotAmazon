@@ -22,7 +22,18 @@
             <p><strong>Price:</strong> $XX.XX</p>
             <p><strong>Description:</strong> Detailed information about this product.</p>
 
-            <button>Add to Cart</button>
+             <!-- Add to Cart Form -->
+            <form method="POST" action="/cart/add">
+                <!-- These hidden inputs send data to the backend -->
+                <input type="hidden" name="productId" value="1">
+                <input type="hidden" name="productName" value="Product Name">
+                <input type="hidden" name="price" value="XX.XX">
+                <!-- Visible quantity selector -->
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" value="1" min="1">
+                <br><br>
+                <button type="submit">Add to Cart</button>
+            </form>
 
             <p><a href="catalogue.html">← Back to Products</a></p>
         </section>

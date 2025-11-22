@@ -10,7 +10,7 @@
     <h1>NotAmazon</h1>
     <nav>
         <a href="index.html">Home</a>
-        <a href="products.html">Products</a>
+        <a href="catalogue.html">Products</a>
         <a href="cart.html">Cart</a>
         <a href="Login.html">Login</a>
         <a href="signup.html">Sign Up</a>
@@ -20,22 +20,59 @@
 <main>
     <h2>Checkout</h2>
 
-    <section>
-        <h3>Shipping Information</h3>
+    <!-- IMPORTANT: wrap everything in a form that posts to /checkout -->
+    <form method="POST" action="/checkout">
+        <section>
+            <h3>Shipping Information</h3>
 
-        <label>Full Name: <input type="text"></label><br>
-        <label>Address: <input type="text"></label><br>
-        <label>City: <input type="text"></label><br>
-        <label>Postal Code: <input type="text"></label><br>
+            <label>
+                Full Name:
+                <input type="text" name="fullName" required>
+            </label>
+            <br>
 
-        <h3>Payment Information (Simulated)</h3>
+            <label>
+                Address:
+                <input type="text" name="address" required>
+            </label>
+            <br>
 
-        <label>Card Number: <input type="text"></label><br>
-        <label>Expiry: <input type="text" placeholder="MM/YY"></label><br>
-        <label>CVV: <input type="text"></label><br>
+            <label>
+                City:
+                <input type="text" name="city" required>
+            </label>
+            <br>
 
-        <a href="order_confirmed.html"><button>Place Order</button></a>
-    </section>
+            <label>
+                Postal Code:
+                <input type="text" name="postalCode" required>
+            </label>
+            <br>
+
+            <h3>Payment Information (Simulated)</h3>
+
+            <label>
+                Card Number:
+                <input type="text" name="cardNumber">
+            </label>
+            <br>
+
+            <label>
+                Expiry:
+                <input type="text" name="expiry" placeholder="MM/YY">
+            </label>
+            <br>
+
+            <label>
+                CVV:
+                <input type="text" name="cvv">
+            </label>
+            <br><br>
+
+            <!-- This actually submits the form to /checkout -->
+            <button type="submit">Place Order</button>
+        </section>
+    </form>
 </main>
 
 </body>

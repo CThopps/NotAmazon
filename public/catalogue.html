@@ -21,27 +21,78 @@
 
         <section id="product-list">
             <article class="product">
-                <h2>Product 1</h2>
-                <p>Description of Product 1.</p>
-                <p>Price: $10.00</p>
+                <h2>Basic Keyboard</h2>
+                <p>A simple mechanical keyboard with blue switches.</p>
+                <p>Price: $49.99</p>
                 <a href="product.html">View Details</a>
-                <button>Add to Cart</button>
+
+                <!-- Add to Cart form for product 1 -->
+                <form method="POST" action="/cart/add">
+                    <input type="hidden" name="productId" value="1">
+                    <input type="hidden" name="productName" value="Basic Keyboard">
+                    <input type="hidden" name="price" value="49.99">
+
+                    <label for="quantity-1">Quantity:</label>
+                    <input 
+                        type="number" 
+                        id="quantity-1" 
+                        name="quantity" 
+                        value="1" 
+                        min="1"
+                    >
+
+                    <button type="submit">Add to Cart</button>
+                </form>
             </article>
 
             <article class="product">
-                <h2>Product 2</h2>
-                <p>Description of Product 2.</p>
-                <p>Price: $15.00</p>
+                <h2>Gaming Mouse</h2>
+                <p>High DPI gaming mouse with customizable buttons.</p>
+                <p>Price: $39.99</p>
                 <a href="product.html">View Details</a>
-                <button>Add to Cart</button>
+
+                <!-- Add to Cart form for product 2 -->
+                <form method="POST" action="/cart/add">
+                    <input type="hidden" name="productId" value="2">
+                    <input type="hidden" name="productName" value="Gaming Mouse">
+                    <input type="hidden" name="price" value="39.99">
+
+                    <label for="quantity-2">Quantity:</label>
+                    <input 
+                        type="number" 
+                        id="quantity-2" 
+                        name="quantity" 
+                        value="1" 
+                        min="1"
+                    >
+
+                    <button type="submit">Add to Cart</button>
+                </form>
             </article>
 
             <article class="product">
-                <h2>Product 3</h2>
-                <p>Description of Product 3.</p>
-                <p>Price: $20.00</p>
+                <h2>Laptop Stand</h2>
+                <p>Adjustable aluminum laptop stand for better ergonomics.</p>
+                <p>Price: $29.99</p>
                 <a href="product.html">View Details</a>
-                <button>Add to Cart</button>
+
+                <!-- Add to Cart form for product 3 -->
+                <form method="POST" action="/cart/add">
+                    <input type="hidden" name="productId" value="3">
+                    <input type="hidden" name="productName" value="Laptop Stand">
+                    <input type="hidden" name="price" value="29.99">
+
+                    <label for="quantity-3">Quantity:</label>
+                    <input 
+                        type="number" 
+                        id="quantity-3" 
+                        name="quantity" 
+                        value="1" 
+                        min="1"
+                    >
+
+                    <button type="submit">Add to Cart</button>
+                </form>
             </article>
         </section>
     </main>

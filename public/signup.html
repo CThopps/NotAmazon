@@ -18,13 +18,29 @@
 </header>
 
 <main>
-    <h2>Create an Account</h2>
+        <form method="POST" action="/signup">
+            <div>
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
 
-    <label>Name: <input type="text"></label><br>
-    <label>Email: <input type="email"></label><br>
-    <label>Password: <input type="password"></label><br>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
 
-    <button>Sign Up</button>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <div>
+                <label for="confirmPassword">Confirm Password:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword">
+            </div>
+
+            <button type="submit">Sign Up</button>
+        </form>
 </main>
 
 </body>
