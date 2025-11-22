@@ -171,6 +171,87 @@ app.get('/debug/orders', (req, res) => {
 
 
 // ----------------------------------------------------------
+// POST ROUTES (Actions: signup, login, cart, checkout, admin)
+// These are just placeholders to know the URLs.
+// ----------------------------------------------------------
+
+// Handle signup form submission
+app.post('/signup', (req, res) => {
+    // TODO: validate input, check if email exists, add to users[]
+    console.log('Signup data received:', req.body);
+    res.send('Signup route placeholder – logic coming soon.');
+});
+
+// Handle login form submission
+app.post('/login', (req, res) => {
+    // TODO: check email & password against users[]
+    console.log('Login data received:', req.body);
+    res.send('Login route placeholder – logic coming soon.');
+});
+
+// Handle logout action
+app.post('/logout', (req, res) => {
+    // TODO: destroy session / clear logged-in user
+    console.log('Logout requested');
+    res.send('Logout route placeholder – logic coming soon.');
+});
+
+// Add an item to the cart
+app.post('/cart/add', (req, res) => {
+    // TODO: read product info from body, update req.session.cart
+    console.log('Add to cart data:', req.body);
+    res.send('Add to cart route placeholder – logic coming soon.');
+});
+
+// Update quantity of an item in the cart
+app.post('/cart/update', (req, res) => {
+    // TODO: change quantity of an item in req.session.cart
+    console.log('Update cart item:', req.body);
+    res.send('Update cart route placeholder – logic coming soon.');
+});
+
+// Remove an item from the cart
+app.post('/cart/remove', (req, res) => {
+    // TODO: remove item from req.session.cart
+    console.log('Remove from cart:', req.body);
+    res.send('Remove from cart route placeholder – logic coming soon.');
+});
+
+// Handle checkout form submission
+app.post('/checkout', (req, res) => {
+    // TODO: create order from req.session.cart + user, push to orders[]
+    console.log('Checkout data received:', req.body);
+    res.send('Checkout route placeholder – logic coming soon.');
+});
+
+// ------------------------
+// ADMIN POST ROUTES
+// ------------------------
+
+// Admin: add a new product
+app.post('/admin/products/add', (req, res) => {
+    // TODO: only allow admins, push new product into products[]
+    console.log('Admin add product:', req.body);
+    res.send('Admin add product route placeholder – logic coming soon.');
+});
+
+// Admin: edit an existing product
+app.post('/admin/products/edit/:id', (req, res) => {
+    // TODO: only allow admins, find product by req.params.id and update it
+    console.log('Admin edit product id:', req.params.id, 'data:', req.body);
+    res.send('Admin edit product route placeholder – logic coming soon.');
+});
+
+// Admin: delete a product
+app.post('/admin/products/delete/:id', (req, res) => {
+    // TODO: only allow admins, remove product with this id from products[]
+    console.log('Admin delete product id:', req.params.id);
+    res.send('Admin delete product route placeholder – logic coming soon.');
+});
+
+
+
+// ----------------------------------------------------------
 // START THE SERVER
 // ----------------------------------------------------------
 // This actually turns your computer into a web server.
