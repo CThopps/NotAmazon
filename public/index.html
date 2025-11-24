@@ -4,16 +4,27 @@
     <meta charset="UTF-8">
     <title>NotAmazon - Home</title>
 </head>
+<script src="session-ui.js"></script>
 <body>
     <header>
-        <h1>NotAmazon</h1>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="catalogue.html">Products</a>
-            <a href="cart.html">Cart</a>
-            <a href="Login.html">Login</a>
-            <a href="signup.html">Sign Up</a>
-        </nav>
+    <h1>NotAmazon</h1>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="catalogue.html">Products</a>
+        <a href="cart.html">Cart</a>
+
+        <!-- These links will be hidden when the user is logged in -->
+        <a href="Login.html" id="login-link">Login</a>
+        <a href="signup.html" id="signup-link">Sign Up</a>
+
+        <!-- This logout form starts hidden and will be shown when logged in -->
+        <form method="POST" action="/logout" id="logout-form" style="display: none; margin: 0; padding: 0; display: inline;">
+            <button type="submit">Logout</button>
+        </form>
+    </nav>
+
+    <!-- Optional: a place to show who is logged in -->
+    <p id="user-info"></p>
     </header>
 
     <main>
