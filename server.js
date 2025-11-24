@@ -68,6 +68,31 @@ const users = [
 const orders = [];
 let nextOrderId = 1; // simple counter for unique order IDs
 
+/**
+ * AUTH MIDDLEWARE
+ * Small helper functions to protect routes.
+ * - requireLogin: only allows logged-in users (any role).
+ * - requireAdmin: only allows users with role === 'admin'.
+ */
+
+// Only allow access if there is a logged-in user in the session
+function requireLogin(req, res, next) {
+    if (!req.session || !req.session.user) {
+        // User is not logged in
+        return res.status(401).send('You must be logged in to access this page.');
+    }
+    next(); // User is logged in, continue to the actual route handler
+}
+
+// Only allow access if the logged-in user is an admin
+function requireAdmin(req, res, next) {
+    if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
+        // User is either not logged in or not an admin
+        return res.status(403).send('Admins only.');
+    }
+    next(); // User is an admin, continue to the actual route handler
+}
+
 
 /**
  * SESSION SETUP
@@ -138,7 +163,8 @@ app.get('/cart', (req, res) => {
 });
 
 // Checkout form page
-app.get('/checkout', (req, res) => {
+// Only logged-in users should be able to see the checkout page
+app.get('/checkout', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
 });
 
@@ -159,12 +185,14 @@ app.get('/signup', (req, res) => {
 });
 
 // Admin — view products list
-app.get('/admin/products', (req, res) => {
+// Only admins should be able to see this page
+app.get('/admin/products', requireAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin_products.html'));
 });
 
 // Admin — add/edit product form
-app.get('/admin/products/add', (req, res) => {
+// Only admins should be able to see this page
+app.get('/admin/products/add', requireAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
 });
 
@@ -221,36 +249,41 @@ app.post('/signup', (req, res) => {
 
 // Handle login form submission
 app.post('/login', (req, res) => {
+    // Extract the email and password that were submitted from the login form
     const { email, password } = req.body;
     console.log('Login data received:', req.body);
 
-    // Find matching user in our fake "users" database
+    // Try to find a user in our fake "users" array with matching email AND password
     const user = users.find(u => u.email === email && u.password === password);
 
+    // If no matching user is found, login fails
     if (!user) {
         console.log('Login failed for:', email);
-        // For now, send a simple 401 (Unauthorized) message.
-        // Later, we could redirect back to /login with an error message.
+
+        // For now, just send a simple error message and 401 (Unauthorized) status.
+        // Later we could redirect back to /login with an error query parameter.
         return res.status(401).send('Invalid email or password.');
     }
 
-    // Store minimal user info in the session so we know who is logged in
+    // If we get here, we found a matching user.
+    // Store only the basic info we need in the session (do NOT store password).
     req.session.user = {
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role     // "admin" or "customer"
     };
 
-    // Make sure the user has a cart in the session (create empty cart if not)
+    // If this user does not have a cart yet in the session, create an empty one.
     if (!req.session.cart) {
         req.session.cart = [];
     }
 
     console.log('User logged in:', req.session.user);
 
-    // After successful login, redirect to the home page (or wherever you like)
+    // After successful login, redirect to the home page (or wherever you prefer).
     res.redirect('/');
 });
+
 
 // Handle logout action
 app.post('/logout', (req, res) => {
@@ -324,7 +357,8 @@ app.post('/cart/remove', (req, res) => {
 });
 
 // Handle checkout form submission
-app.post('/checkout', (req, res) => {
+// Only logged-in users should be able to submit checkout
+app.post('/checkout', requireLogin, (req, res) => {
     // TODO (later): create order from req.session.cart + req.session.user, push to orders[]
     console.log('Checkout data received:', req.body);
     res.send('Checkout route placeholder – logic coming soon.');
@@ -335,26 +369,25 @@ app.post('/checkout', (req, res) => {
 // ------------------------
 
 // Admin: add a new product
-app.post('/admin/products/add', (req, res) => {
-    // TODO (later): only allow admins, push new product into products[]
+app.post('/admin/products/add', requireAdmin, (req, res) => {
+    // TODO (later): push new product into products[]
     console.log('Admin add product:', req.body);
     res.send('Admin add product route placeholder – logic coming soon.');
 });
 
 // Admin: edit an existing product
-app.post('/admin/products/edit/:id', (req, res) => {
-    // TODO (later): only allow admins, find product by req.params.id and update it
+app.post('/admin/products/edit/:id', requireAdmin, (req, res) => {
+    // TODO (later): find product by req.params.id and update it
     console.log('Admin edit product id:', req.params.id, 'data:', req.body);
     res.send('Admin edit product route placeholder – logic coming soon.');
 });
 
 // Admin: delete a product
-app.post('/admin/products/delete/:id', (req, res) => {
-    // TODO (later): only allow admins, remove product with this id from products[]
+app.post('/admin/products/delete/:id', requireAdmin, (req, res) => {
+    // TODO (later): remove product with this id from products[]
     console.log('Admin delete product id:', req.params.id);
     res.send('Admin delete product route placeholder – logic coming soon.');
 });
-
 
 // ----------------------------------------------------------
 // START THE SERVER
