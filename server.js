@@ -423,9 +423,14 @@ app.get('/admin/products', requireAdmin, (req, res) => {
                 <td>$${p.price.toFixed(2)}</td>
                 <td>${p.stock}</td>
                 <td>${p.description}</td>
+                <td>
+                <form method="POST" action="/admin/products/delete/${p.id}" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+                </td>
             </tr>
-        `;
-    });
+    `;
+});
 
     const html = `
     <!DOCTYPE html>
@@ -487,6 +492,7 @@ app.get('/admin/products', requireAdmin, (req, res) => {
 app.get('/admin/products/add', requireAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
 });
+
 
 // ----------------------------------------------------------
 // DEBUG ROUTES (TEMPORARY) - To test the fake database & session
@@ -803,9 +809,21 @@ app.post('/admin/products/edit/:id', requireAdmin, (req, res) => {
 
 // Admin: delete a product
 app.post('/admin/products/delete/:id', requireAdmin, (req, res) => {
-    // TODO (later): remove product with this id from products[]
-    console.log('Admin delete product id:', req.params.id);
-    res.send('Admin delete product route placeholder – logic coming soon.');
+    const productId = Number(req.params.id);
+
+    // Remove product from array
+    const index = products.findIndex(p => p.id === productId);
+
+    if (index === -1) {
+        return res.status(404).send("Product not found.");
+    }
+
+    const removed = products.splice(index, 1); // remove 1 item
+
+    console.log("Admin removed product:", removed);
+
+    // Redirect back to admin product list
+    res.redirect('/admin/products');
 });
 
 // ----------------------------------------------------------
