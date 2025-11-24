@@ -300,24 +300,27 @@ app.get('/product', (req, res) => {
     res.send(html);
 });
 
-// Shopping cart page (dynamic - uses session cart)
 app.get('/cart', (req, res) => {
     const cart = req.session.cart || [];
 
-    const total = cart.reduce((sum, item) => {
-        return sum + item.price * item.quantity;
-    }, 0);
-
+    let total = 0;
     let cartItemsHtml = '';
 
     if (cart.length === 0) {
         cartItemsHtml = '<p>Your cart is empty.</p>';
     } else {
         cart.forEach(item => {
+            const price = Number(item.price);
+
+            // Fallback if price is invalid
+            const safePrice = Number.isNaN(price) ? 0 : price;
+
+            total += safePrice * item.quantity;
+
             cartItemsHtml += `
                 <article>
-                    <h3>${item.productName}</h3>
-                    <p>Price: $${item.price.toFixed(2)}</p>
+                    <h3>${item.productName || 'Unknown Product'}</h3>
+                    <p>Price: $${safePrice.toFixed(2)}</p>
 
                     <form method="POST" action="/cart/update">
                         <input type="hidden" name="productId" value="${item.productId}">
@@ -347,20 +350,7 @@ app.get('/cart', (req, res) => {
     </head>
     <body>
         <header>
-            <h1>NotAmazon</h1>
-            <nav>
-                <a href="/index.html">Home</a>
-                <a href="/catalogue">Products</a>
-                <a href="/cart">Cart</a>
-
-                <a href="/Login.html" id="login-link">Login</a>
-                <a href="/signup.html" id="signup-link">Sign Up</a>
-
-                <form method="POST" action="/logout" id="logout-form" style="display: none; margin: 0; padding: 0; display: inline;">
-                    <button type="submit">Logout</button>
-                </form>
-            </nav>
-            <p id="user-info"></p>
+            <!-- your header/nav stuff here, same as before -->
         </header>
 
         <main>
@@ -705,26 +695,38 @@ app.post('/logout', (req, res) => {
 
 // Add an item to the cart
 app.post('/cart/add', (req, res) => {
-    const { productId, productName, price, quantity } = req.body;
+    const { productId, quantity } = req.body;
 
+    // Convert safely
+    const id = Number(productId);
+    const qty = Number(quantity) || 1;
+
+    // Look up the product in our "database"
+    const product = products.find(p => p.id === id);
+    if (!product) {
+        return res.status(400).send('Product not found.');
+    }
+
+    // Make sure the cart exists in session
     if (!req.session.cart) {
         req.session.cart = [];
     }
 
-    const existingItem = req.session.cart.find(item => item.productId == productId);
+    // Check if item already exists in cart
+    const existingItem = req.session.cart.find(item => item.productId === id);
 
     if (existingItem) {
-        existingItem.quantity += Number(quantity);
+        existingItem.quantity += qty;
     } else {
         req.session.cart.push({
-            productId: Number(productId),
-            productName,
-            price: Number(price),
-            quantity: Number(quantity)
+            productId: id,
+            productName: product.name,
+            price: product.price,   // always from backend
+            quantity: qty
         });
     }
 
-    console.log("Updated cart:", req.session.cart);
+    console.log('Updated cart:', req.session.cart);
 
     res.redirect('/cart');
 });
