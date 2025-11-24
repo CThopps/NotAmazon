@@ -9,39 +9,50 @@
 <header>
     <h1>NotAmazon</h1>
     <nav>
-        <a href="index.html">Home</a>
-        <a href="products.html">Products</a>
+        <a href="/index.html">Home</a>
+        <a href="/catalogue">Products</a>
         <a href="/cart">Cart</a>
-        <a href="Login.html">Login</a>
-        <a href="signup.html">Sign Up</a>
+
+        <a href="/Login.html" id="login-link">Login</a>
+        <a href="/signup.html" id="signup-link">Sign Up</a>
+
+        <form method="POST" action="/logout" id="logout-form" style="display:none; margin:0; padding:0;">
+            <button type="submit">Logout</button>
+        </form>
     </nav>
+
+    <!-- Optional: a place to show who is logged in -->
+    <p id="user-info"></p>
 </header>
 
 <main>
-        <form method="POST" action="/signup">
-            <div>
-                <label for="name">Full Name:</label>
-                <input type="text" id="name" name="name" required>
-            </div>
+    <h2>Create an Account</h2>
 
-            <div>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
+    <form method="POST" action="/signup">
+        <div>
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
 
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
 
-            <div>
-                <label for="confirmPassword">Confirm Password:</label>
-                <input type="password" id="confirmPassword" name="confirmPassword">
-            </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
 
-            <button type="submit">Sign Up</button>
-        </form>
+        <div>
+            <label for="confirmPassword">Confirm Password:</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required>
+        </div>
+
+        <button type="submit">Sign Up</button>
+    </form>
 </main>
 
+<script src="session-ui.js"></script>
 </body>
 </html>

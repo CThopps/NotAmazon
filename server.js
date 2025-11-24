@@ -147,14 +147,151 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Catalogue listing page
+// Dynamic Catalogue Page
 app.get('/catalogue', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'catalogue.html'));
+    let productHtml = "";
+
+    // Loop through the products array and generate HTML for each product
+    products.forEach(prod => {
+        productHtml += `
+            <article class="product">
+                <h2>${prod.name}</h2>
+                <p>${prod.description}</p>
+                <p><strong>Price:</strong> $${prod.price.toFixed(2)}</p>
+
+                <form method="GET" action="/product">
+                    <input type="hidden" name="id" value="${prod.id}">
+                    <button type="submit">View Details</button>
+                </form>
+
+                <form method="POST" action="/cart/add">
+                    <input type="hidden" name="productId" value="${prod.id}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit">Add to Cart</button>
+                </form>
+            </article>
+            <hr>
+        `;
+    });
+
+    // Build FULL page HTML
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>NotAmazon - Catalogue</title>
+    </head>
+    <body>
+
+    <header>
+        <h1>NotAmazon</h1>
+        <nav>
+            <a href="/index.html">Home</a>
+            <a href="/catalogue">Products</a>
+            <a href="/cart">Cart</a>
+            <a href="/Login.html" id="login-link">Login</a>
+            <a href="/signup.html" id="signup-link">Sign Up</a>
+
+            <form method="POST" action="/logout" id="logout-form" style="display: none; margin: 0; padding: 0; display: inline;">
+                <button type="submit">Logout</button>
+            </form>
+        </nav>
+        <p id="user-info"></p>
+    </header>
+
+    <main>
+        <h2>All Products</h2>
+
+        <section id="product-list">
+            ${productHtml}
+        </section>
+    </main>
+
+    <script src="/session-ui.js"></script>
+    </body>
+    </html>
+    `;
+
+    res.send(html);
 });
 
-// Individual product page (static for now)
+// Dynamic Product Details Page
 app.get('/product', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'product.html'));
+    // Read the "id" query parameter from the URL: /product?id=1
+    const id = Number(req.query.id);
+
+    // If no id is provided, or it's not a number, show an error
+    if (!id) {
+        return res.status(400).send('Product ID is required.');
+    }
+
+    // Find the product in our fake "products" database
+    const product = products.find(p => p.id === id);
+
+    // If no product matches this ID, show 404
+    if (!product) {
+        return res.status(404).send('Product not found.');
+    }
+
+    // Build the HTML for this specific product
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>NotAmazon - ${product.name}</title>
+    </head>
+    <body>
+        <header>
+            <h1>NotAmazon</h1>
+            <nav>
+                <a href="/index.html">Home</a>
+                <a href="/catalogue">Products</a>
+                <a href="/cart">Cart</a>
+
+                <a href="/Login.html" id="login-link">Login</a>
+                <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                <form method="POST" action="/logout" id="logout-form"
+                    style="display: none; margin: 0; padding: 0; display: inline;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+            <p id="user-info"></p>
+        </header>
+
+        <main>
+            <section>
+                <h2>${product.name}</h2>
+                <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
+                <p><strong>In Stock:</strong> ${product.stock}</p>
+                <p><strong>Description:</strong> ${product.description}</p>
+
+                <!-- Add to cart form for this specific product -->
+                <form method="POST" action="/cart/add">
+                    <input type="hidden" name="productId" value="${product.id}">
+                    <input type="hidden" name="productName" value="${product.name}">
+                    <input type="hidden" name="price" value="${product.price}">
+                    
+                    <label>
+                        Quantity:
+                        <input type="number" name="quantity" value="1" min="1" max="${product.stock}">
+                    </label>
+
+                    <button type="submit">Add to Cart</button>
+                </form>
+
+                <p><a href="/catalogue">← Back to Products</a></p>
+            </section>
+        </main>
+
+        <script src="/session-ui.js"></script>
+    </body>
+    </html>
+    `;
+
+    res.send(html);
 });
 
 // Shopping cart page (dynamic - uses session cart)
@@ -324,9 +461,51 @@ app.get('/debug/session', (req, res) => {
 
 // Handle signup form submission
 app.post('/signup', (req, res) => {
-    // TODO: validate input, check if email exists, add to users[]
+    const { name, email, password, confirmPassword } = req.body;
     console.log('Signup data received:', req.body);
-    res.send('Signup route placeholder – logic coming soon.');
+
+    // Basic validation: check required fields
+    if (!name || !email || !password || !confirmPassword) {
+        return res.status(400).send('Name, email, password, and confirm password are required.');
+    }
+
+    // Check if passwords match
+    if (password !== confirmPassword) {
+        return res.status(400).send('Passwords do not match.');
+    }
+
+    // Check if a user with this email already exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+        return res.status(400).send('An account with this email already exists.');
+    }
+
+    // Create a new user object (role: customer by default)
+    const newUser = {
+        name,
+        email,
+        password,   // plain text for this project ONLY
+        role: 'customer'
+    };
+
+    // Add to our fake "database" of users
+    users.push(newUser);
+
+    console.log('New user created:', newUser);
+
+    // Automatically log the user in after signup
+    req.session.user = {
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role
+    };
+
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+
+    // Redirect to home page after successful signup
+    res.redirect('/');
 });
 
 // Handle login form submission

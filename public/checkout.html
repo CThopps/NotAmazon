@@ -10,16 +10,14 @@
 <header>
     <h1>NotAmazon</h1>
     <nav>
-        <a href="index.html">Home</a>
-        <a href="catalogue.html">Products</a>
+        <a href="/index.html">Home</a>
+        <a href="/catalogue">Products</a>
         <a href="/cart">Cart</a>
 
-        <!-- These links will be hidden when the user is logged in -->
-        <a href="Login.html" id="login-link">Login</a>
-        <a href="signup.html" id="signup-link">Sign Up</a>
+        <a href="/Login.html" id="login-link">Login</a>
+        <a href="/signup.html" id="signup-link">Sign Up</a>
 
-        <!-- This logout form starts hidden and will be shown when logged in -->
-        <form method="POST" action="/logout" id="logout-form" style="display: none; margin: 0; padding: 0; display: inline;">
+        <form method="POST" action="/logout" id="logout-form" style="display:none; margin:0; padding:0;">
             <button type="submit">Logout</button>
         </form>
     </nav>
