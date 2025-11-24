@@ -161,12 +161,10 @@ app.get('/product', (req, res) => {
 app.get('/cart', (req, res) => {
     const cart = req.session.cart || [];
 
-    // Calculate total cost
     const total = cart.reduce((sum, item) => {
         return sum + item.price * item.quantity;
     }, 0);
 
-    // Build HTML for each cart item
     let cartItemsHtml = '';
 
     if (cart.length === 0) {
@@ -178,19 +176,15 @@ app.get('/cart', (req, res) => {
                     <h3>${item.productName}</h3>
                     <p>Price: $${item.price.toFixed(2)}</p>
 
-                    <!-- Update quantity form -->
                     <form method="POST" action="/cart/update">
                         <input type="hidden" name="productId" value="${item.productId}">
-
                         <label>
                             Qty:
                             <input type="number" name="newQuantity" value="${item.quantity}" min="1">
                         </label>
-
                         <button type="submit">Update</button>
                     </form>
 
-                    <!-- Remove item form -->
                     <form method="POST" action="/cart/remove">
                         <input type="hidden" name="productId" value="${item.productId}">
                         <button type="submit">Remove</button>
@@ -201,7 +195,6 @@ app.get('/cart', (req, res) => {
         });
     }
 
-    // Build full page HTML (simple, matches your existing style)
     const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -213,11 +206,12 @@ app.get('/cart', (req, res) => {
         <header>
             <h1>NotAmazon</h1>
             <nav>
-                <a href="index.html">Home</a>
-                <a href="catalogue.html">Products</a>
-                <a href="cart.html">Cart</a>
-                <a href="Login.html" id="login-link">Login</a>
-                <a href="signup.html" id="signup-link">Sign Up</a>
+                <a href="/index.html">Home</a>
+                <a href="/catalogue">Products</a>
+                <a href="/cart">Cart</a>
+
+                <a href="/Login.html" id="login-link">Login</a>
+                <a href="/signup.html" id="signup-link">Sign Up</a>
 
                 <form method="POST" action="/logout" id="logout-form" style="display: none; margin: 0; padding: 0; display: inline;">
                     <button type="submit">Logout</button>
@@ -228,20 +222,20 @@ app.get('/cart', (req, res) => {
 
         <main>
             <h2>Your Cart</h2>
-
             <section>
                 ${cartItemsHtml}
             </section>
 
             <p><strong>Total: $${total.toFixed(2)}</strong></p>
 
-            <!-- Proceed to checkout -->
+            <p><a href="/catalogue">← Continue Shopping</a></p>
+
             <form method="POST" action="/checkout">
                 <button type="submit">Proceed to Checkout</button>
             </form>
         </main>
 
-        <script src="session-ui.js"></script>
+        <script src="/session-ui.js"></script>
     </body>
     </html>
     `;
@@ -258,7 +252,7 @@ app.get('/checkout', requireLogin, (req, res) => {
 
 // Order confirmation page after checkout simulation
 app.get('/order-confirmation', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'order_confirmation.html'));
+    res.sendFile(path.join(__dirname, 'public', 'order_confirmed.html'));
 });
 
 // Login form page
