@@ -4,85 +4,89 @@
     <meta charset="UTF-8">
     <title>NotAmazon - Checkout</title>
 </head>
-<script src="session-ui.js"></script>
 <body>
 
 <header>
     <h1>NotAmazon</h1>
     <nav>
-        <a href="/index.html">Home</a>
+        <a href="index.html">Home</a>
         <a href="/catalogue">Products</a>
         <a href="/cart">Cart</a>
-
-        <a href="/Login.html" id="login-link">Login</a>
-        <a href="/signup.html" id="signup-link">Sign Up</a>
-
-        <form method="POST" action="/logout" id="logout-form" style="display:none; margin:0; padding:0;">
-            <button type="submit">Logout</button>
-        </form>
+        <a href="Login.html" id="login-link">Login</a>
+        <a href="signup.html" id="signup-link">Sign Up</a>
     </nav>
-
-    <!-- Optional: a place to show who is logged in -->
-    <p id="user-info"></p>
 </header>
 
 <main>
     <h2>Checkout</h2>
 
-    <!-- IMPORTANT: wrap everything in a form that posts to /checkout -->
+    <!-- IMPORTANT: proper form that POSTs to /checkout -->
     <form method="POST" action="/checkout">
-        <section>
-            <h3>Shipping Information</h3>
 
-            <label>
-                Full Name:
-                <input type="text" name="fullName" required>
-            </label>
-            <br>
+        <h3>Shipping Information</h3>
 
-            <label>
-                Address:
-                <input type="text" name="address" required>
-            </label>
-            <br>
+        <label>
+            Full Name:
+            <input type="text" name="fullName" required>
+        </label><br>
 
-            <label>
-                City:
-                <input type="text" name="city" required>
-            </label>
-            <br>
+        <label>
+            Address:
+            <input type="text" name="address" required>
+        </label><br>
 
-            <label>
-                Postal Code:
-                <input type="text" name="postalCode" required>
-            </label>
-            <br>
+        <label>
+            City:
+            <input type="text" name="city" required>
+        </label><br>
 
-            <h3>Payment Information (Simulated)</h3>
+        <label>
+            Province:
+            <select name="province" required>
+                <option value="">Select Province</option>
+                <option value="AB">Alberta</option>
+                <option value="BC">British Columbia</option>
+                <option value="MB">Manitoba</option>
+                <option value="NB">New Brunswick</option>
+                <option value="NL">Newfoundland and Labrador</option>
+                <option value="NS">Nova Scotia</option>
+                <option value="ON">Ontario</option>
+                <option value="PE">Prince Edward Island</option>
+                <option value="QC">Quebec</option>
+                <option value="SK">Saskatchewan</option>
+                <option value="NT">Northwest Territories</option>
+                <option value="NU">Nunavut</option>
+                <option value="YT">Yukon</option>
+            </select>
+        </label><br>
 
-            <label>
-                Card Number:
-                <input type="text" name="cardNumber">
-            </label>
-            <br>
+        <label>
+            Postal Code:
+            <input type="text" name="postalCode" required>
+        </label><br>
 
-            <label>
-                Expiry:
-                <input type="text" name="expiry" placeholder="MM/YY">
-            </label>
-            <br>
+        <h3>Payment Information (Simulated)</h3>
 
-            <label>
-                CVV:
-                <input type="text" name="cvv">
-            </label>
-            <br><br>
+        <label>
+            Card Number:
+            <input type="text" name="cardNumber" required>
+        </label><br>
 
-            <!-- This actually submits the form to /checkout -->
-            <button type="submit">Place Order</button>
-        </section>
+        <label>
+            Expiry:
+            <input type="text" name="expiry" placeholder="MM/YY" required>
+        </label><br>
+
+        <label>
+            CVV:
+            <input type="text" name="cvv" required>
+        </label><br><br>
+
+        <!-- IMPORTANT: this must be the submit button inside the form -->
+        <button type="submit">Place Order</button>
     </form>
 </main>
 
+<script src="session-ui.js"></script>
 </body>
 </html>

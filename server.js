@@ -363,7 +363,7 @@ app.get('/cart', (req, res) => {
 
             <p><a href="/catalogue">← Continue Shopping</a></p>
 
-            <form method="POST" action="/checkout">
+            <form method="GET" action="/checkout">
                 <button type="submit">Proceed to Checkout</button>
             </form>
         </main>
@@ -383,9 +383,111 @@ app.get('/checkout', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
 });
 
-// Order confirmation page after checkout simulation
+// Dynamic Order Confirmation Page
 app.get('/order-confirmation', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'order_confirmed.html'));
+    const lastOrderId = req.session.lastOrderId;
+
+    // If no recent order in session, show a simple message
+    if (!lastOrderId) {
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Order Confirmation</title>
+            </head>
+            <body>
+                <h1>No recent order found</h1>
+                <p>You probably refreshed this page or came here directly.</p>
+                <p><a href="/catalogue">Go back to products</a></p>
+            </body>
+            </html>
+        `);
+    }
+
+    const order = orders.find(o => o.id === lastOrderId);
+
+    if (!order) {
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Order Confirmation</title>
+            </head>
+            <body>
+                <h1>Order not found</h1>
+                <p>There was a problem locating your order.</p>
+                <p><a href="/catalogue">Go back to products</a></p>
+            </body>
+            </html>
+        `);
+    }
+
+    // Build items list HTML
+    let itemsHtml = '';
+    order.items.forEach(item => {
+        itemsHtml += `
+            <li>
+                ${item.productName} (x${item.quantity}) – $${(item.price * item.quantity).toFixed(2)}
+            </li>
+        `;
+    });
+
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Order Confirmation</title>
+    </head>
+    <body>
+        <header>
+            <h1>NotAmazon</h1>
+            <nav>
+                <a href="/index.html">Home</a>
+                <a href="/catalogue">Products</a>
+                <a href="/cart">Cart</a>
+
+                <a href="/Login.html" id="login-link">Login</a>
+                <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                <form method="POST" action="/logout" id="logout-form"
+                      style="display:none; margin:0; padding:0;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+            <p id="user-info"></p>
+        </header>
+
+        <main>
+            <h2>Order Confirmed!</h2>
+            <p>Thank you for your purchase, ${order.shipping.fullName || order.userName}.</p>
+
+            <h3>Items you bought:</h3>
+            <ul>
+                ${itemsHtml}
+            </ul>
+
+            <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
+
+            <h3>Shipping to:</h3>
+            <p>
+                ${order.shipping.fullName}<br>
+                ${order.shipping.address}<br>
+                ${order.shipping.city} ${order.shipping.province}<br>
+                ${order.shipping.postalCode}
+            </p>
+
+            <p><a href="/catalogue">← Continue Shopping</a></p>
+        </main>
+
+        <script src="/session-ui.js"></script>
+    </body>
+    </html>
+    `;
+
+    res.send(html);
 });
 
 // Login form page
@@ -767,58 +869,51 @@ app.post('/cart/remove', (req, res) => {
 });
 
 // Handle checkout form submission
-// Only logged-in users should be able to submit checkout
 app.post('/checkout', requireLogin, (req, res) => {
-    // Checkout form fields (from checkout.html)
-    const { fullName, address, city, postalCode, cardNumber, expiry, cvv } = req.body;
+    console.log('Checkout req.body:', req.body);
 
-    // Ensure there is a cart in the session
+    const { fullName, address, city, province, postalCode, cardNumber, expiry, cvv } = req.body;
+
     const cart = req.session.cart || [];
-
-    // If cart is empty, there is nothing to checkout
     if (cart.length === 0) {
         return res.status(400).send('Your cart is empty. Add items before checking out.');
     }
 
-    // Get the logged-in user from the session
     const user = req.session.user;
 
-    // Calculate the total price of the order
     const total = cart.reduce((sum, item) => {
         return sum + item.price * item.quantity;
     }, 0);
 
-    // Create a new order object
     const newOrder = {
-        id: nextOrderId++,              // unique order ID
+        id: nextOrderId++,
         userEmail: user.email,
         userName: user.name,
-        items: cart.map(item => ({      // make a shallow copy of the cart items
+        items: cart.map(item => ({
             productId: item.productId,
             productName: item.productName,
             price: item.price,
             quantity: item.quantity
         })),
-        total: total,
+    total,
         shipping: {
             fullName,
             address,
             city,
+            province,
             postalCode
         },
-        // Just stored for reference/debugging
         createdAt: new Date().toISOString()
     };
 
-    // Save the order in our fake "orders" database
     orders.push(newOrder);
 
-    // Clear the cart after successful checkout
+    // Clear cart and remember last order for confirmation page
     req.session.cart = [];
+    req.session.lastOrderId = newOrder.id;
 
     console.log('New order created:', newOrder);
 
-    // Redirect to a static "order confirmation" page
     res.redirect('/order-confirmation');
 });
 
