@@ -424,9 +424,15 @@ app.get('/admin/products', requireAdmin, (req, res) => {
                 <td>${p.stock}</td>
                 <td>${p.description}</td>
                 <td>
+
+                <form method="GET" action="/admin/products/edit/${p.id}" style="display:inline;">
+                    <button type="submit">Edit</button>
+                </form>
+
                 <form method="POST" action="/admin/products/delete/${p.id}" style="display:inline;">
                     <button type="submit">Delete</button>
                 </form>
+
                 </td>
             </tr>
     `;
@@ -491,6 +497,60 @@ app.get('/admin/products', requireAdmin, (req, res) => {
 // Only admins should be able to see this page
 app.get('/admin/products/add', requireAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
+});
+
+// Admin: Load edit page for a product
+app.get('/admin/products/edit/:id', requireAdmin, (req, res) => {
+    const productId = Number(req.params.id);
+    const product = products.find(p => p.id === productId);
+
+    if (!product) {
+        return res.status(404).send("Product not found.");
+    }
+
+    // Build a simple pre-filled HTML form
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Edit Product - ${product.name}</title>
+    </head>
+    <body>
+
+    <h1>Edit Product</h1>
+
+    <form method="POST" action="/admin/products/edit/${product.id}">
+        <label>
+            Name:
+            <input type="text" name="name" value="${product.name}" required>
+        </label><br><br>
+
+        <label>
+            Price:
+            <input type="number" step="0.01" name="price" value="${product.price}" required>
+        </label><br><br>
+
+        <label>
+            Stock:
+            <input type="number" name="stock" value="${product.stock}" required>
+        </label><br><br>
+
+        <label>
+            Description:<br>
+            <textarea name="description" required>${product.description}</textarea>
+        </label><br><br>
+
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <p><a href="/admin/products">← Back to Product List</a></p>
+
+    </body>
+    </html>
+    `;
+
+    res.send(html);
 });
 
 
@@ -800,11 +860,27 @@ app.post('/admin/products/add', requireAdmin, (req, res) => {
 });
 
 
-// Admin: edit an existing product
+// Admin: apply updates to the product
 app.post('/admin/products/edit/:id', requireAdmin, (req, res) => {
-    // TODO (later): find product by req.params.id and update it
-    console.log('Admin edit product id:', req.params.id, 'data:', req.body);
-    res.send('Admin edit product route placeholder – logic coming soon.');
+    const productId = Number(req.params.id);
+    const product = products.find(p => p.id === productId);
+
+    if (!product) {
+        return res.status(404).send("Product not found.");
+    }
+
+    const { name, price, stock, description } = req.body;
+
+    // Update values
+    product.name = name;
+    product.price = Number(price);
+    product.stock = Number(stock);
+    product.description = description;
+
+    console.log("Product updated:", product);
+
+    // Redirect back to admin list
+    res.redirect('/admin/products');
 });
 
 // Admin: delete a product
