@@ -157,10 +157,98 @@ app.get('/product', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
 
-// Shopping cart page
+// Shopping cart page (dynamic - uses session cart)
 app.get('/cart', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'cart.html'));
+    const cart = req.session.cart || [];
+
+    // Calculate total cost
+    const total = cart.reduce((sum, item) => {
+        return sum + item.price * item.quantity;
+    }, 0);
+
+    // Build HTML for each cart item
+    let cartItemsHtml = '';
+
+    if (cart.length === 0) {
+        cartItemsHtml = '<p>Your cart is empty.</p>';
+    } else {
+        cart.forEach(item => {
+            cartItemsHtml += `
+                <article>
+                    <h3>${item.productName}</h3>
+                    <p>Price: $${item.price.toFixed(2)}</p>
+
+                    <!-- Update quantity form -->
+                    <form method="POST" action="/cart/update">
+                        <input type="hidden" name="productId" value="${item.productId}">
+
+                        <label>
+                            Qty:
+                            <input type="number" name="newQuantity" value="${item.quantity}" min="1">
+                        </label>
+
+                        <button type="submit">Update</button>
+                    </form>
+
+                    <!-- Remove item form -->
+                    <form method="POST" action="/cart/remove">
+                        <input type="hidden" name="productId" value="${item.productId}">
+                        <button type="submit">Remove</button>
+                    </form>
+                </article>
+                <hr>
+            `;
+        });
+    }
+
+    // Build full page HTML (simple, matches your existing style)
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>NotAmazon - Cart</title>
+    </head>
+    <body>
+        <header>
+            <h1>NotAmazon</h1>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="catalogue.html">Products</a>
+                <a href="cart.html">Cart</a>
+                <a href="Login.html" id="login-link">Login</a>
+                <a href="signup.html" id="signup-link">Sign Up</a>
+
+                <form method="POST" action="/logout" id="logout-form" style="display: none; margin: 0; padding: 0; display: inline;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+            <p id="user-info"></p>
+        </header>
+
+        <main>
+            <h2>Your Cart</h2>
+
+            <section>
+                ${cartItemsHtml}
+            </section>
+
+            <p><strong>Total: $${total.toFixed(2)}</strong></p>
+
+            <!-- Proceed to checkout -->
+            <form method="POST" action="/checkout">
+                <button type="submit">Proceed to Checkout</button>
+            </form>
+        </main>
+
+        <script src="session-ui.js"></script>
+    </body>
+    </html>
+    `;
+
+    res.send(html);
 });
+
 
 // Checkout form page
 // Only logged-in users should be able to see the checkout page
@@ -351,17 +439,74 @@ app.post('/cart/update', (req, res) => {
 
 // Remove an item from the cart
 app.post('/cart/remove', (req, res) => {
-    // TODO (later): remove item from req.session.cart
-    console.log('Remove from cart:', req.body);
-    res.send('Remove from cart route placeholder – logic coming soon.');
+    const { productId } = req.body;
+
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+
+    // Keep only the items that DO NOT match the product ID
+    req.session.cart = req.session.cart.filter(item => item.productId != productId);
+
+    console.log("Cart after removal:", req.session.cart);
+
+    res.redirect('/cart');
 });
 
 // Handle checkout form submission
 // Only logged-in users should be able to submit checkout
 app.post('/checkout', requireLogin, (req, res) => {
-    // TODO (later): create order from req.session.cart + req.session.user, push to orders[]
-    console.log('Checkout data received:', req.body);
-    res.send('Checkout route placeholder – logic coming soon.');
+    // Checkout form fields (from checkout.html)
+    const { fullName, address, city, postalCode, cardNumber, expiry, cvv } = req.body;
+
+    // Ensure there is a cart in the session
+    const cart = req.session.cart || [];
+
+    // If cart is empty, there is nothing to checkout
+    if (cart.length === 0) {
+        return res.status(400).send('Your cart is empty. Add items before checking out.');
+    }
+
+    // Get the logged-in user from the session
+    const user = req.session.user;
+
+    // Calculate the total price of the order
+    const total = cart.reduce((sum, item) => {
+        return sum + item.price * item.quantity;
+    }, 0);
+
+    // Create a new order object
+    const newOrder = {
+        id: nextOrderId++,              // unique order ID
+        userEmail: user.email,
+        userName: user.name,
+        items: cart.map(item => ({      // make a shallow copy of the cart items
+            productId: item.productId,
+            productName: item.productName,
+            price: item.price,
+            quantity: item.quantity
+        })),
+        total: total,
+        shipping: {
+            fullName,
+            address,
+            city,
+            postalCode
+        },
+        // Just stored for reference/debugging
+        createdAt: new Date().toISOString()
+    };
+
+    // Save the order in our fake "orders" database
+    orders.push(newOrder);
+
+    // Clear the cart after successful checkout
+    req.session.cart = [];
+
+    console.log('New order created:', newOrder);
+
+    // Redirect to a static "order confirmation" page
+    res.redirect('/order-confirmation');
 });
 
 // ------------------------
