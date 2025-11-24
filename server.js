@@ -273,16 +273,47 @@ app.post('/logout', (req, res) => {
 
 // Add an item to the cart
 app.post('/cart/add', (req, res) => {
-    // TODO (later): use req.session.cart to store items for this user
-    console.log('Add to cart data:', req.body);
-    res.send('Add to cart route placeholder – logic coming soon.');
+    const { productId, productName, price, quantity } = req.body;
+
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+
+    const existingItem = req.session.cart.find(item => item.productId == productId);
+
+    if (existingItem) {
+        existingItem.quantity += Number(quantity);
+    } else {
+        req.session.cart.push({
+            productId: Number(productId),
+            productName,
+            price: Number(price),
+            quantity: Number(quantity)
+        });
+    }
+
+    console.log("Updated cart:", req.session.cart);
+
+    res.redirect('/cart');
 });
 
 // Update quantity of an item in the cart
 app.post('/cart/update', (req, res) => {
-    // TODO (later): change quantity of an item in req.session.cart
-    console.log('Update cart item:', req.body);
-    res.send('Update cart route placeholder – logic coming soon.');
+    const { productId, newQuantity } = req.body;
+
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+
+    const item = req.session.cart.find(i => i.productId == productId);
+
+    if (item) {
+        item.quantity = Number(newQuantity);
+    }
+
+    console.log("Cart after update:", req.session.cart);
+
+    res.redirect('/cart');
 });
 
 // Remove an item from the cart
