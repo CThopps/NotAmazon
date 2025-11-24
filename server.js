@@ -47,6 +47,12 @@ const products = [
     }
 ];
 
+// Next product ID for new products added by admin
+let nextProductId = products.length > 0
+    ? Math.max(...products.map(p => p.id)) + 1
+    : 1;
+
+
 // Users – login system will use this
 // Pre-made admin + customer
 const users = [
@@ -403,10 +409,77 @@ app.get('/signup', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
-// Admin — view products list
+
 // Only admins should be able to see this page
+// Admin — view products list (dynamic)
 app.get('/admin/products', requireAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin_products.html'));
+    let rowsHtml = '';
+
+    products.forEach(p => {
+        rowsHtml += `
+            <tr>
+                <td>${p.id}</td>
+                <td>${p.name}</td>
+                <td>$${p.price.toFixed(2)}</td>
+                <td>${p.stock}</td>
+                <td>${p.description}</td>
+            </tr>
+        `;
+    });
+
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Admin - Products</title>
+    </head>
+    <body>
+        <header>
+            <h1>NotAmazon - Admin</h1>
+            <nav>
+                <a href="/index.html">Home</a>
+                <a href="/catalogue">Products</a>
+                <a href="/cart">Cart</a>
+
+                <a href="/Login.html" id="login-link">Login</a>
+                <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                <form method="POST" action="/logout" id="logout-form"
+                      style="display: none; margin: 0; padding: 0; display: inline;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+            <p id="user-info"></p>
+        </header>
+
+        <main>
+            <h2>Admin - Product List</h2>
+
+            <p><a href="/admin/products/add">Add New Product</a></p>
+
+            <table border="1" cellpadding="5" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+        </main>
+
+        <script src="/session-ui.js"></script>
+    </body>
+    </html>
+    `;
+
+    res.send(html);
 });
 
 // Admin — add/edit product form
@@ -414,7 +487,6 @@ app.get('/admin/products', requireAdmin, (req, res) => {
 app.get('/admin/products/add', requireAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
 });
-
 
 // ----------------------------------------------------------
 // DEBUG ROUTES (TEMPORARY) - To test the fake database & session
@@ -687,11 +759,40 @@ app.post('/checkout', requireLogin, (req, res) => {
 // ------------------------
 
 // Admin: add a new product
+// Only admins can access this route
 app.post('/admin/products/add', requireAdmin, (req, res) => {
-    // TODO (later): push new product into products[]
-    console.log('Admin add product:', req.body);
-    res.send('Admin add product route placeholder – logic coming soon.');
+    const { name, price, stock, description } = req.body;
+
+    // Basic validation
+    if (!name || !price || !stock || !description) {
+        return res.status(400).send('Name, price, stock, and description are required.');
+    }
+
+    const numericPrice = Number(price);
+    const numericStock = Number(stock);
+
+    if (Number.isNaN(numericPrice) || Number.isNaN(numericStock)) {
+        return res.status(400).send('Price and stock must be numbers.');
+    }
+
+    // Create new product object
+    const newProduct = {
+        id: nextProductId++,
+        name,
+        price: numericPrice,
+        stock: numericStock,
+        description
+    };
+
+    // Add to our fake "products" database
+    products.push(newProduct);
+
+    console.log('New product added by admin:', newProduct);
+
+    // After adding, redirect to the admin products list
+    res.redirect('/admin/products');
 });
+
 
 // Admin: edit an existing product
 app.post('/admin/products/edit/:id', requireAdmin, (req, res) => {

@@ -2,37 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NotAmazon - Edit Product</title>
+    <title>NotAmazon - Admin Add Product</title>
 </head>
 <body>
 
 <header>
-    <h1>NotAmazon</h1>
+    <h1>NotAmazon - Admin</h1>
     <nav>
         <a href="/index.html">Home</a>
         <a href="/catalogue">Products</a>
         <a href="/cart">Cart</a>
+        <a href="/admin/products">Admin Products</a>
 
         <a href="/Login.html" id="login-link">Login</a>
         <a href="/signup.html" id="signup-link">Sign Up</a>
 
-        <form method="POST" action="/logout" id="logout-form" style="display:none; margin:0; padding:0;">
+        <form method="POST" action="/logout" id="logout-form"
+              style="display:none; margin:0; padding:0;">
             <button type="submit">Logout</button>
         </form>
     </nav>
+    <p id="user-info"></p>
 </header>
 
 <main>
-    <h2>Add / Edit Product</h2>
+    <h2>Add New Product</h2>
 
-    <label>Name: <input type="text"></label><br>
-    <label>Description: <textarea></textarea></label><br>
-    <label>Price: <input type="number" step="0.01"></label><br>
-    <label>Stock: <input type="number"></label><br>
-    <label>Image URL: <input type="text"></label><br>
+    <form method="POST" action="/admin/products/add">
+        <div>
+            <label>Name:
+                <input type="text" name="name" required>
+            </label>
+        </div>
 
-    <button>Save Product</button>
+        <div>
+            <label>Price:
+                <input type="number" step="0.01" name="price" required>
+            </label>
+        </div>
+
+        <div>
+            <label>Stock:
+                <input type="number" name="stock" required>
+            </label>
+        </div>
+
+        <div>
+            <label>Description:
+                <textarea name="description" required></textarea>
+            </label>
+        </div>
+
+        <button type="submit">Add Product</button>
+    </form>
 </main>
 
+<script src="/session-ui.js"></script>
 </body>
 </html>
