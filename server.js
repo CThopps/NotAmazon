@@ -7,6 +7,9 @@ const path = require('path');
 // Session middleware to keep track of logged-in users and carts
 const session = require('express-session');
 
+// Add MySQL library
+const mysql = require('mysql2/promise');
+
 // Create an Express application
 // `app` will be used to define routes (GET, POST, etc.)
 const app = express();
@@ -14,6 +17,14 @@ const app = express();
 // Port number where the server will run
 // Access it at: http://localhost:8080
 const port = 8080;
+
+// MySQL connection pool
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',          // preset to my MySQL user (change if needed)
+    password: '',          // preset to my MySQL password (change if needed)
+    database: 'notamazon'
+});
 
 
 /**
