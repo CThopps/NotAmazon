@@ -81,17 +81,6 @@ app.use(express.urlencoded({ extended: true }));
 // This allows Express to handle JSON data (useful later for APIs or AJAX)
 app.use(express.json());
 
-/**
- * Serve all files inside the "public" folder to the browser.
- * Example:
- *   /index.html → public/index.html
- *   /styles.css → public/styles.css
- *   /image.png → public/image.png
- * This makes images, CSS, and client JS work automatically.
- */
-app.use(express.static(path.join(__dirname, 'public')));
-
-
 // ----------------------------------------------------------
 // GET ROUTES (Pages)
 // Each of these sends a specific HTML file to the browser.
@@ -99,10 +88,97 @@ app.use(express.static(path.join(__dirname, 'public')));
 // clean and prepares us for backend logic.
 // ----------------------------------------------------------
 
-// Home / Landing Page
-app.get('/', (req, res) => {
-    // Sends: public/index.html
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Home / Landing Page – dynamic, shows 3 featured products from DB
+app.get('/', async (req, res) => {
+    try {
+        // OPTION A: random 3 products
+        const [rows] = await pool.query(
+            'SELECT * FROM products ORDER BY RAND() LIMIT 3'
+        );
+
+        // (If you prefer the first 3 products instead, use:
+        // 'SELECT * FROM products ORDER BY id LIMIT 3'
+        // )
+
+        let featuredHtml = '';
+
+        rows.forEach(prod => {
+            featuredHtml += `
+                <article class="product">
+                    <h3>${prod.name}</h3>
+                    <p>${prod.description}</p>
+                    <p>Price: $${Number(prod.price).toFixed(2)}</p>
+
+                    <!-- View details goes to /product?id=... -->
+                    <form method="GET" action="/product" style="display:inline;">
+                        <input type="hidden" name="id" value="${prod.id}">
+                        <button type="submit">View Details</button>
+                    </form>
+
+                    <!-- Add to cart posts to /cart/add -->
+                    <form method="POST" action="/cart/add" style="display:inline;">
+                        <input type="hidden" name="productId" value="${prod.id}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit">Add to Cart</button>
+                    </form>
+                </article>
+                <hr>
+            `;
+        });
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>NotAmazon - Home</title>
+        </head>
+        <body>
+            <header>
+                <h1>NotAmazon</h1>
+                <nav>
+                    <a href="/">Home</a>
+                    <a href="/catalogue">Products</a>
+                    <a href="/cart">Cart</a>
+
+                    <a href="/admin/products" id="admin-link" style="display:none;">Admin</a>
+
+                    <a href="/Login.html" id="login-link">Login</a>
+                    <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                    <form method="POST" action="/logout" id="logout-form"
+                          style="display:none; margin:0; padding:0;">
+                        <button type="submit">Logout</button>
+                    </form>
+                </nav>
+                <p id="user-info"></p>
+            </header>
+
+            <main>
+                <h2>Featured Products</h2>
+
+                <section id="featured-products">
+                    ${featuredHtml || '<p>No products found.</p>'}
+                </section>
+
+                <p><a href="/catalogue">Browse All Products →</a></p>
+            </main>
+
+            <script src="/session-ui.js"></script>
+        </body>
+        </html>
+        `;
+
+        res.send(html);
+    } catch (err) {
+        console.error('Error loading featured products from DB:', err);
+        res.status(500).send('Error loading home page.');
+    }
+});
+
+// Keep old /index.html links working by redirecting to the dynamic home page
+app.get('/index.html', (req, res) => {
+    res.redirect('/');
 });
 
 // Dynamic Catalogue Page
@@ -150,7 +226,7 @@ app.get('/catalogue', async (req, res) => {
         <header>
             <h1>NotAmazon</h1>
             <nav>
-                <a href="/index.html">Home</a>
+                <a href="/">Home</a>
                 <a href="/catalogue">Products</a>
                 <a href="/cart">Cart</a>
 
@@ -215,7 +291,7 @@ app.get('/product', async (req, res) => {
             <header>
                 <h1>NotAmazon</h1>
                 <nav>
-                    <a href="/index.html">Home</a>
+                    <a href="/">Home</a>
                     <a href="/catalogue">Products</a>
                     <a href="/cart">Cart</a>
 
@@ -405,7 +481,7 @@ app.get('/order-confirmation', requireLogin, async (req, res) => {
             <header>
                 <h1>NotAmazon</h1>
                 <nav>
-                    <a href="/index.html">Home</a>
+                    <a href="/">Home</a>
                     <a href="/catalogue">Products</a>
                     <a href="/cart">Cart</a>
 
@@ -518,7 +594,7 @@ app.get('/admin/products', requireAdmin, async (req, res) => {
             <header>
                 <h1>NotAmazon - Admin</h1>
                 <nav>
-                    <a href="/index.html">Home</a>
+                    <a href="/">Home</a>
                     <a href="/catalogue">Store Front</a>
                     <a href="/cart">Cart</a>
 
@@ -641,7 +717,7 @@ app.get('/admin/products/edit/:id', requireAdmin, async (req, res) => {
         <header>
             <h1>NotAmazon - Admin</h1>
             <nav>
-                <a href="/index.html">Home</a>
+                <a href="/">Home</a>
                 <a href="/catalogue">Store Front</a>
                 <a href="/cart">Cart</a>
 
@@ -764,7 +840,7 @@ app.post('/signup', async (req, res) => {
         };
 
         // Redirect to home (or catalogue) after signup
-        res.redirect('/index.html');
+        res.redirect('/');
     } catch (err) {
         console.error('Error during signup (DB):', err);
         res.status(500).send('Error during signup.');
@@ -806,9 +882,9 @@ app.post('/login', async (req, res) => {
         if (user.role === 'admin') {
             res.redirect('/admin/products');
         } else {
-            res.redirect('/index.html');
+            res.redirect('/');
         }
-        
+
     } catch (err) {
         console.error('Error during login (DB):', err);
         res.status(500).send('Error during login.');
@@ -1050,6 +1126,11 @@ app.post('/admin/products/delete/:id', requireAdmin, async (req, res) => {
         res.status(500).send('Error deleting product.');
     }
 });
+
+// ----------------------------------------------------------
+// STATIC FILES (after all routes)
+// ----------------------------------------------------------
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // ----------------------------------------------------------
 // START THE SERVER
