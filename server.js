@@ -803,8 +803,12 @@ app.post('/login', async (req, res) => {
 
         console.log('User logged in (DB):', req.session.user);
 
-        // After login, send them to home or catalogue
-        res.redirect('/index.html');
+        if (user.role === 'admin') {
+            res.redirect('/admin/products');
+        } else {
+            res.redirect('/index.html');
+        }
+        
     } catch (err) {
         console.error('Error during login (DB):', err);
         res.status(500).send('Error during login.');

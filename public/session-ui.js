@@ -4,13 +4,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/debug/session', {
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
         });
 
         if (!response.ok) {
-            // If the debug route fails for some reason, just stop silently
             console.error('Failed to fetch session info');
             return;
         }
@@ -18,32 +16,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await response.json();
         const user = data.user || null;
 
-        const loginLink = document.getElementById('login-link');
+        const loginLink  = document.getElementById('login-link');
         const signupLink = document.getElementById('signup-link');
         const logoutForm = document.getElementById('logout-form');
-        const userInfo = document.getElementById('user-info');
+        const userInfo   = document.getElementById('user-info');
+        const adminLink  = document.getElementById('admin-link'); 
 
         if (user) {
-            // Logged in: hide Login / Sign Up, show Logout, show user info
-            if (loginLink) loginLink.style.display = 'none';
+            // Logged in → hide login/signup, show logout
+            if (loginLink)  loginLink.style.display = 'none';
             if (signupLink) signupLink.style.display = 'none';
             if (logoutForm) logoutForm.style.display = 'inline';
 
             if (userInfo) {
                 userInfo.textContent = `Logged in as ${user.email} (${user.role})`;
             }
+
+            if (adminLink) {
+                if (user.role === 'admin') {
+                    adminLink.style.display = 'inline';
+                } else {
+                    adminLink.style.display = 'none';
+                }
+            }
         } else {
-            // Not logged in: show Login / Sign Up, hide Logout, clear user info
-            if (loginLink) loginLink.style.display = 'inline';
+            // Logged out → show login/signup, hide logout/admin
+            if (loginLink)  loginLink.style.display = 'inline';
             if (signupLink) signupLink.style.display = 'inline';
             if (logoutForm) logoutForm.style.display = 'none';
 
-            if (userInfo) {
-                userInfo.textContent = '';
-            }
+            if (userInfo) userInfo.textContent = '';
+
+            if (adminLink) adminLink.style.display = 'none';
         }
+
     } catch (err) {
         console.error('Error checking session info:', err);
-        // Fail silently on the UI side
     }
 });

@@ -8,18 +8,21 @@
 <body>
     <header>
     <h1>NotAmazon</h1>
-    <nav>
+     <nav>
         <a href="/index.html">Home</a>
         <a href="/catalogue">Products</a>
         <a href="/cart">Cart</a>
 
+        <a href="/admin/products" id="admin-link" style="display:none;">Admin</a>
+
         <a href="/Login.html" id="login-link">Login</a>
         <a href="/signup.html" id="signup-link">Sign Up</a>
 
-        <form method="POST" action="/logout" id="logout-form" style="display:none; margin:0; padding:0;">
+        <form method="POST" action="/logout" id="logout-form" style="display:none;">
             <button type="submit">Logout</button>
         </form>
     </nav>
+    <p id="user-info"></p>
 
     <!-- Optional: a place to show who is logged in -->
     <p id="user-info"></p>
