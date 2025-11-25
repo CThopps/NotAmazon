@@ -165,101 +165,47 @@ app.get('/', (req, res) => {
 });
 
 // Dynamic Catalogue Page
-app.get('/catalogue', (req, res) => {
-    let productHtml = "";
+// Dynamic Catalogue Page (now using MySQL instead of in-memory array)
+app.get('/catalogue', async (req, res) => {
+    try {
+        // Get all products from the "products" table
+        const [rows] = await pool.query('SELECT * FROM products');
 
-    // Loop through the products array and generate HTML for each product
-    products.forEach(prod => {
-        productHtml += `
-            <article class="product">
-                <h2>${prod.name}</h2>
-                <p>${prod.description}</p>
-                <p><strong>Price:</strong> $${prod.price.toFixed(2)}</p>
+        let productHtml = "";
 
-                <form method="GET" action="/product">
-                    <input type="hidden" name="id" value="${prod.id}">
-                    <button type="submit">View Details</button>
-                </form>
+        rows.forEach(prod => {
+            productHtml += `
+                <article class="product">
+                    <h2>${prod.name}</h2>
+                    <p>${prod.description}</p>
+                    <p><strong>Price:</strong> $${Number(prod.price).toFixed(2)}</p>
 
-                <form method="POST" action="/cart/add">
-                    <input type="hidden" name="productId" value="${prod.id}">
-                    <input type="hidden" name="quantity" value="1">
-                    <button type="submit">Add to Cart</button>
-                </form>
-            </article>
-            <hr>
-        `;
-    });
+                    <!-- View Details button goes to /product?id=... -->
+                    <form method="GET" action="/product">
+                        <input type="hidden" name="id" value="${prod.id}">
+                        <button type="submit">View Details</button>
+                    </form>
 
-    // Build FULL page HTML
-    const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>NotAmazon - Catalogue</title>
-    </head>
-    <body>
+                    <!-- Add 1 unit of this product to the cart -->
+                    <form method="POST" action="/cart/add">
+                        <input type="hidden" name="productId" value="${prod.id}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit">Add to Cart</button>
+                    </form>
+                </article>
+                <hr>
+            `;
+        });
 
-    <header>
-        <h1>NotAmazon</h1>
-        <nav>
-            <a href="/index.html">Home</a>
-            <a href="/catalogue">Products</a>
-            <a href="/cart">Cart</a>
-            <a href="/Login.html" id="login-link">Login</a>
-            <a href="/signup.html" id="signup-link">Sign Up</a>
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>NotAmazon - Catalogue</title>
+        </head>
+        <body>
 
-            <form method="POST" action="/logout" id="logout-form" style="display: none; margin: 0; padding: 0; display: inline;">
-                <button type="submit">Logout</button>
-            </form>
-        </nav>
-        <p id="user-info"></p>
-    </header>
-
-    <main>
-        <h2>All Products</h2>
-
-        <section id="product-list">
-            ${productHtml}
-        </section>
-    </main>
-
-    <script src="/session-ui.js"></script>
-    </body>
-    </html>
-    `;
-
-    res.send(html);
-});
-
-// Dynamic Product Details Page
-app.get('/product', (req, res) => {
-    // Read the "id" query parameter from the URL: /product?id=1
-    const id = Number(req.query.id);
-
-    // If no id is provided, or it's not a number, show an error
-    if (!id) {
-        return res.status(400).send('Product ID is required.');
-    }
-
-    // Find the product in our fake "products" database
-    const product = products.find(p => p.id === id);
-
-    // If no product matches this ID, show 404
-    if (!product) {
-        return res.status(404).send('Product not found.');
-    }
-
-    // Build the HTML for this specific product
-    const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>NotAmazon - ${product.name}</title>
-    </head>
-    <body>
         <header>
             <h1>NotAmazon</h1>
             <nav>
@@ -271,7 +217,7 @@ app.get('/product', (req, res) => {
                 <a href="/signup.html" id="signup-link">Sign Up</a>
 
                 <form method="POST" action="/logout" id="logout-form"
-                    style="display: none; margin: 0; padding: 0; display: inline;">
+                      style="display:none; margin:0; padding:0;">
                     <button type="submit">Logout</button>
                 </form>
             </nav>
@@ -279,36 +225,101 @@ app.get('/product', (req, res) => {
         </header>
 
         <main>
-            <section>
-                <h2>${product.name}</h2>
-                <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
-                <p><strong>In Stock:</strong> ${product.stock}</p>
-                <p><strong>Description:</strong> ${product.description}</p>
+            <h2>All Products</h2>
 
-                <!-- Add to cart form for this specific product -->
-                <form method="POST" action="/cart/add">
-                    <input type="hidden" name="productId" value="${product.id}">
-                    <input type="hidden" name="productName" value="${product.name}">
-                    <input type="hidden" name="price" value="${product.price}">
-                    
-                    <label>
-                        Quantity:
-                        <input type="number" name="quantity" value="1" min="1" max="${product.stock}">
-                    </label>
-
-                    <button type="submit">Add to Cart</button>
-                </form>
-
-                <p><a href="/catalogue">← Back to Products</a></p>
+            <section id="product-list">
+                ${productHtml || '<p>No products found.</p>'}
             </section>
         </main>
 
         <script src="/session-ui.js"></script>
-    </body>
-    </html>
-    `;
+        </body>
+        </html>
+        `;
 
-    res.send(html);
+        res.send(html);
+    } catch (err) {
+        console.error('Error loading products from DB:', err);
+        res.status(500).send('Error loading products.');
+    }
+});
+
+// Dynamic Product Details Page (using MySQL)
+app.get('/product', async (req, res) => {
+    try {
+        // Read ?id= from URL: /product?id=1
+        const id = Number(req.query.id);
+
+        if (!id) {
+            return res.status(400).send('Product ID is required.');
+        }
+
+        // Get this product from the database
+        const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+
+        if (rows.length === 0) {
+            return res.status(404).send('Product not found.');
+        }
+
+        const product = rows[0];
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>NotAmazon - ${product.name}</title>
+        </head>
+        <body>
+            <header>
+                <h1>NotAmazon</h1>
+                <nav>
+                    <a href="/index.html">Home</a>
+                    <a href="/catalogue">Products</a>
+                    <a href="/cart">Cart</a>
+
+                    <a href="/Login.html" id="login-link">Login</a>
+                    <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                    <form method="POST" action="/logout" id="logout-form"
+                          style="display:none; margin:0; padding:0;">
+                        <button type="submit">Logout</button>
+                    </form>
+                </nav>
+                <p id="user-info"></p>
+            </header>
+
+            <main>
+                <section>
+                    <h2>${product.name}</h2>
+                    <p><strong>Price:</strong> $${Number(product.price).toFixed(2)}</p>
+                    <p><strong>In Stock:</strong> ${product.stock}</p>
+                    <p><strong>Description:</strong> ${product.description}</p>
+
+                    <!-- Add to cart form for this specific product -->
+                    <form method="POST" action="/cart/add">
+                        <input type="hidden" name="productId" value="${product.id}">
+                        <label>
+                            Quantity:
+                            <input type="number" name="quantity" value="1" min="1" max="${product.stock}">
+                        </label>
+                        <button type="submit">Add to Cart</button>
+                    </form>
+
+                    <p><a href="/catalogue">← Back to Products</a></p>
+                </section>
+            </main>
+
+            <script src="/session-ui.js"></script>
+        </body>
+        </html>
+        `;
+
+        res.send(html);
+    } catch (err) {
+        console.error('Error loading product from DB:', err);
+        res.status(500).send('Error loading product.');
+    }
 });
 
 app.get('/cart', (req, res) => {
@@ -514,53 +525,180 @@ app.get('/signup', (req, res) => {
 
 
 // Only admins should be able to see this page
-// Admin — view products list (dynamic)
-app.get('/admin/products', requireAdmin, (req, res) => {
-    let rowsHtml = '';
+// Admin — view products list (MySQL)
+app.get('/admin/products', requireAdmin, async (req, res) => {
+    try {
+        // Load all products from the DB
+        const [rows] = await pool.query('SELECT * FROM products');
 
-    products.forEach(p => {
-        rowsHtml += `
-            <tr>
-                <td>${p.id}</td>
-                <td>${p.name}</td>
-                <td>$${p.price.toFixed(2)}</td>
-                <td>${p.stock}</td>
-                <td>${p.description}</td>
-                <td>
+        let rowsHtml = '';
 
-                <form method="GET" action="/admin/products/edit/${p.id}" style="display:inline;">
-                    <button type="submit">Edit</button>
-                </form>
+        rows.forEach(p => {
+            rowsHtml += `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>$${Number(p.price).toFixed(2)}</td>
+                    <td>${p.stock}</td>
+                    <td>${p.description}</td>
+                    <td>
+                        <!-- Edit button -->
+                        <form method="GET" action="/admin/products/edit/${p.id}" style="display:inline;">
+                            <button type="submit">Edit</button>
+                        </form>
 
-                <form method="POST" action="/admin/products/delete/${p.id}" style="display:inline;">
-                    <button type="submit">Delete</button>
-                </form>
+                        <!-- Delete button -->
+                        <form method="POST" action="/admin/products/delete/${p.id}" style="display:inline;">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            `;
+        });
 
-                </td>
-            </tr>
-    `;
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Admin - Products</title>
+        </head>
+        <body>
+            <header>
+                <h1>NotAmazon - Admin</h1>
+                <nav>
+                    <a href="/index.html">Home</a>
+                    <a href="/catalogue">Store Front</a>
+                    <a href="/cart">Cart</a>
+
+                    <a href="/Login.html" id="login-link">Login</a>
+                    <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                    <form method="POST" action="/logout" id="logout-form"
+                          style="display:none; margin:0; padding:0;">
+                        <button type="submit">Logout</button>
+                    </form>
+                </nav>
+                <p id="user-info"></p>
+            </header>
+
+            <main>
+                <h2>Admin - Product List</h2>
+
+                <p><a href="/admin/products/add">Add New Product</a></p>
+
+                <table border="1" cellpadding="5" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml || '<tr><td colspan="6">No products found.</td></tr>'}
+                    </tbody>
+                </table>
+
+                <p><a href="/catalogue">← Back to Store</a></p>
+            </main>
+
+            <script src="/session-ui.js"></script>
+        </body>
+        </html>
+        `;
+
+        res.send(html);
+    } catch (err) {
+        console.error('Error loading admin products from DB:', err);
+        res.status(500).send('Error loading admin product list.');
+    }
 });
 
-    const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Admin - Products</title>
-    </head>
-    <body>
+// Admin: show "Add Product" form
+app.get('/admin/products/add', requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
+});
+
+
+// Admin: add a new product (MySQL)
+app.post('/admin/products/add', requireAdmin, async (req, res) => {
+    try {
+        const { name, price, stock, description } = req.body;
+
+        // Basic validation
+        if (!name || !price || !stock || !description) {
+            return res.status(400).send('All fields are required.');
+        }
+
+        const priceNum = Number(price);
+        const stockNum = Number(stock);
+
+        if (Number.isNaN(priceNum) || Number.isNaN(stockNum)) {
+            return res.status(400).send('Price and stock must be numbers.');
+        }
+
+        // Insert into products table
+        const [result] = await pool.query(
+            'INSERT INTO products (name, price, stock, description) VALUES (?, ?, ?, ?)',
+            [name, priceNum, stockNum, description]
+        );
+
+        console.log('Admin added product with ID:', result.insertId);
+
+        // Go back to admin product list
+        res.redirect('/admin/products');
+    } catch (err) {
+        console.error('Error adding product (DB):', err);
+        res.status(500).send('Error adding product.');
+    }
+});
+
+
+// Admin: Load edit page for a product (MySQL)
+app.get('/admin/products/edit/:id', requireAdmin, async (req, res) => {
+    try {
+        const productId = Number(req.params.id);
+
+        if (!productId) {
+            return res.status(400).send('Product ID is required.');
+        }
+
+        const [rows] = await pool.query(
+            'SELECT * FROM products WHERE id = ?',
+            [productId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).send('Product not found.');
+        }
+
+        const product = rows[0];
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Edit Product - ${product.name}</title>
+        </head>
+        <body>
+
         <header>
             <h1>NotAmazon - Admin</h1>
             <nav>
                 <a href="/index.html">Home</a>
-                <a href="/catalogue">Products</a>
+                <a href="/catalogue">Store Front</a>
                 <a href="/cart">Cart</a>
 
                 <a href="/Login.html" id="login-link">Login</a>
                 <a href="/signup.html" id="signup-link">Sign Up</a>
 
                 <form method="POST" action="/logout" id="logout-form"
-                      style="display: none; margin: 0; padding: 0; display: inline;">
+                      style="display:none; margin:0; padding:0;">
                     <button type="submit">Logout</button>
                 </form>
             </nav>
@@ -568,92 +706,45 @@ app.get('/admin/products', requireAdmin, (req, res) => {
         </header>
 
         <main>
-            <h2>Admin - Product List</h2>
+            <h2>Edit Product</h2>
 
-            <p><a href="/admin/products/add">Add New Product</a></p>
+            <form method="POST" action="/admin/products/edit/${product.id}">
+                <label>
+                    Name:
+                    <input type="text" name="name" value="${product.name}" required>
+                </label><br><br>
 
-            <table border="1" cellpadding="5" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rowsHtml}
-                </tbody>
-            </table>
+                <label>
+                    Price:
+                    <input type="number" step="0.01" name="price" value="${Number(product.price)}" required>
+                </label><br><br>
+
+                <label>
+                    Stock:
+                    <input type="number" name="stock" value="${product.stock}" required>
+                </label><br><br>
+
+                <label>
+                    Description:<br>
+                    <textarea name="description" required>${product.description}</textarea>
+                </label><br><br>
+
+                <button type="submit">Save Changes</button>
+            </form>
+
+            <p><a href="/admin/products">← Back to Product List</a></p>
         </main>
 
         <script src="/session-ui.js"></script>
-    </body>
-    </html>
-    `;
+        </body>
+        </html>
+        `;
 
-    res.send(html);
-});
-
-// Admin — add/edit product form
-// Only admins should be able to see this page
-app.get('/admin/products/add', requireAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin_product_form.html'));
-});
-
-// Admin: Load edit page for a product
-app.get('/admin/products/edit/:id', requireAdmin, (req, res) => {
-    const productId = Number(req.params.id);
-    const product = products.find(p => p.id === productId);
-
-    if (!product) {
-        return res.status(404).send("Product not found.");
+        res.send(html);
+    } catch (err) {
+        console.error('Error loading product for edit (DB):', err);
+        res.status(500).send('Error loading product.');
     }
-
-    // Build a simple pre-filled HTML form
-    const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Edit Product - ${product.name}</title>
-    </head>
-    <body>
-
-    <h1>Edit Product</h1>
-
-    <form method="POST" action="/admin/products/edit/${product.id}">
-        <label>
-            Name:
-            <input type="text" name="name" value="${product.name}" required>
-        </label><br><br>
-
-        <label>
-            Price:
-            <input type="number" step="0.01" name="price" value="${product.price}" required>
-        </label><br><br>
-
-        <label>
-            Stock:
-            <input type="number" name="stock" value="${product.stock}" required>
-        </label><br><br>
-
-        <label>
-            Description:<br>
-            <textarea name="description" required>${product.description}</textarea>
-        </label><br><br>
-
-        <button type="submit">Save Changes</button>
-    </form>
-
-    <p><a href="/admin/products">← Back to Product List</a></p>
-
-    </body>
-    </html>
-    `;
-
-    res.send(html);
 });
 
 
@@ -806,61 +897,61 @@ app.post('/logout', (req, res) => {
     });
 });
 
-// Add an item to the cart
-app.post('/cart/add', (req, res) => {
-    const { productId, quantity } = req.body;
+// Add an item to the cart (now using MySQL for product lookup)
+app.post('/cart/add', async (req, res) => {
+    try {
+        const { productId, quantity } = req.body;
 
-    // Convert safely
-    const id = Number(productId);
-    const qty = Number(quantity) || 1;
+        const id = Number(productId);
+        const qty = Number(quantity) || 1;
 
-    // Look up the product in our "database"
-    const product = products.find(p => p.id === id);
-    if (!product) {
-        return res.status(400).send('Product not found.');
+        if (!id) {
+            return res.status(400).send('Product ID is required.');
+        }
+
+        // Look up product in the database
+        const [rows] = await pool.query(
+            'SELECT id, name, price, stock FROM products WHERE id = ?',
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(400).send('Product not found.');
+        }
+
+        const product = rows[0];
+
+        // (Optional) basic stock check – you can relax this if you want
+        if (product.stock <= 0) {
+            return res.status(400).send('This product is out of stock.');
+        }
+
+        // Ensure cart exists in session
+        if (!req.session.cart) {
+            req.session.cart = [];
+        }
+
+        // See if item already in cart
+        const existingItem = req.session.cart.find(item => item.productId === product.id);
+
+        if (existingItem) {
+            existingItem.quantity += qty;
+        } else {
+            req.session.cart.push({
+                productId: product.id,
+                productName: product.name,
+                price: Number(product.price), // ensure number
+                quantity: qty
+            });
+        }
+
+        console.log('Updated cart:', req.session.cart);
+
+        res.redirect('/cart');
+    } catch (err) {
+        console.error('Error adding to cart from DB:', err);
+        res.status(500).send('Error adding item to cart.');
     }
-
-    // Make sure the cart exists in session
-    if (!req.session.cart) {
-        req.session.cart = [];
-    }
-
-    // Check if item already exists in cart
-    const existingItem = req.session.cart.find(item => item.productId === id);
-
-    if (existingItem) {
-        existingItem.quantity += qty;
-    } else {
-        req.session.cart.push({
-            productId: id,
-            productName: product.name,
-            price: product.price,   // always from backend
-            quantity: qty
-        });
-    }
-
-    console.log('Updated cart:', req.session.cart);
-
-    res.redirect('/cart');
-});
-
-// Update quantity of an item in the cart
-app.post('/cart/update', (req, res) => {
-    const { productId, newQuantity } = req.body;
-
-    if (!req.session.cart) {
-        req.session.cart = [];
-    }
-
-    const item = req.session.cart.find(i => i.productId == productId);
-
-    if (item) {
-        item.quantity = Number(newQuantity);
-    }
-
-    console.log("Cart after update:", req.session.cart);
-
-    res.redirect('/cart');
 });
 
 // Remove an item from the cart
@@ -968,46 +1059,73 @@ app.post('/admin/products/add', requireAdmin, (req, res) => {
 });
 
 
-// Admin: apply updates to the product
-app.post('/admin/products/edit/:id', requireAdmin, (req, res) => {
-    const productId = Number(req.params.id);
-    const product = products.find(p => p.id === productId);
+// Admin: apply updates to the product (MySQL)
+app.post('/admin/products/edit/:id', requireAdmin, async (req, res) => {
+    try {
+        const productId = Number(req.params.id);
 
-    if (!product) {
-        return res.status(404).send("Product not found.");
+        if (!productId) {
+            return res.status(400).send('Product ID is required.');
+        }
+
+        const { name, price, stock, description } = req.body;
+
+        if (!name || !price || !stock || !description) {
+            return res.status(400).send('All fields are required.');
+        }
+
+        const priceNum = Number(price);
+        const stockNum = Number(stock);
+
+        if (Number.isNaN(priceNum) || Number.isNaN(stockNum)) {
+            return res.status(400).send('Price and stock must be numbers.');
+        }
+
+        const [result] = await pool.query(
+            'UPDATE products SET name = ?, price = ?, stock = ?, description = ? WHERE id = ?',
+            [name, priceNum, stockNum, description, productId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).send('Product not found.');
+        }
+
+        console.log('Product updated (DB):', { productId, name, priceNum, stockNum, description });
+
+        res.redirect('/admin/products');
+    } catch (err) {
+        console.error('Error updating product (DB):', err);
+        res.status(500).send('Error updating product.');
     }
-
-    const { name, price, stock, description } = req.body;
-
-    // Update values
-    product.name = name;
-    product.price = Number(price);
-    product.stock = Number(stock);
-    product.description = description;
-
-    console.log("Product updated:", product);
-
-    // Redirect back to admin list
-    res.redirect('/admin/products');
 });
 
-// Admin: delete a product
-app.post('/admin/products/delete/:id', requireAdmin, (req, res) => {
-    const productId = Number(req.params.id);
+// Admin: delete a product (MySQL)
+app.post('/admin/products/delete/:id', requireAdmin, async (req, res) => {
+    try {
+        const productId = Number(req.params.id);
 
-    // Remove product from array
-    const index = products.findIndex(p => p.id === productId);
+        if (!productId) {
+            return res.status(400).send('Product ID is required.');
+        }
 
-    if (index === -1) {
-        return res.status(404).send("Product not found.");
+        const [result] = await pool.query(
+            'DELETE FROM products WHERE id = ?',
+            [productId]
+        );
+
+        if (result.affectedRows === 0) {
+            // No product with that ID found
+            return res.status(404).send('Product not found.');
+        }
+
+        console.log('Product deleted (DB):', productId);
+
+        // Go back to admin product list
+        res.redirect('/admin/products');
+    } catch (err) {
+        console.error('Error deleting product (DB):', err);
+        res.status(500).send('Error deleting product.');
     }
-
-    const removed = products.splice(index, 1); // remove 1 item
-
-    console.log("Admin removed product:", removed);
-
-    // Redirect back to admin product list
-    res.redirect('/admin/products');
 });
 
 // ----------------------------------------------------------
