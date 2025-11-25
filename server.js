@@ -26,65 +26,6 @@ const pool = mysql.createPool({
     database: 'notamazon'
 });
 
-
-/**
- * Fake Database (In-Memory)
- * These arrays will act as our "database" for now until we add the SQL part.
- * In a real application, this data would be stored in a database like MySQL.
- */
-
-// Product list – shown on catalogue page and used by admin
-const products = [
-    {
-        id: 1,
-        name: "Basic Keyboard",
-        price: 49.99,
-        stock: 10,
-        description: "A simple mechanical keyboard with blue switches."
-    },
-    {
-        id: 2,
-        name: "Gaming Mouse",
-        price: 39.99,
-        stock: 15,
-        description: "High DPI gaming mouse with customizable buttons."
-    },
-    {
-        id: 3,
-        name: "Laptop Stand",
-        price: 29.99,
-        stock: 20,
-        description: "Adjustable aluminum laptop stand for better ergonomics."
-    }
-];
-
-// Next product ID for new products added by admin
-let nextProductId = products.length > 0
-    ? Math.max(...products.map(p => p.id)) + 1
-    : 1;
-
-
-// Users – login system will use this
-// Pre-made admin + customer
-const users = [
-    {
-        name: "Admin User",
-        email: "admin@notamazon.com",
-        password: "admin123",        // plain text ONLY for this project
-        role: "admin"
-    },
-    {
-        name: "Test Customer",
-        email: "customer@notamazon.com",
-        password: "customer123",
-        role: "customer"
-    }
-];
-
-// Orders – checkout will push new order objects here
-const orders = [];
-let nextOrderId = 1; // simple counter for unique order IDs
-
 /**
  * AUTH MIDDLEWARE
  * Small helper functions to protect routes.
@@ -757,26 +698,6 @@ app.get('/admin/products/edit/:id', requireAdmin, async (req, res) => {
     }
 });
 
-
-// ----------------------------------------------------------
-// DEBUG ROUTES (TEMPORARY) - To test the fake database & session
-// ----------------------------------------------------------
-
-// View products
-app.get('/debug/products', (req, res) => {
-    res.json(products);
-});
-
-// View users (admin + test customer)
-app.get('/debug/users', (req, res) => {
-    res.json(users);
-});
-
-// View orders (should be empty right now)
-app.get('/debug/orders', (req, res) => {
-    res.json(orders);
-});
-
 // View current session state
 app.get('/debug/session', (req, res) => {
     // Simple counter to show the session persists between requests
@@ -1056,46 +977,6 @@ app.post('/checkout', requireLogin, async (req, res) => {
         res.status(500).send('Error processing checkout.');
     }
 });
-
-// ------------------------
-// ADMIN POST ROUTES
-// ------------------------
-
-// Admin: add a new product
-// Only admins can access this route
-app.post('/admin/products/add', requireAdmin, (req, res) => {
-    const { name, price, stock, description } = req.body;
-
-    // Basic validation
-    if (!name || !price || !stock || !description) {
-        return res.status(400).send('Name, price, stock, and description are required.');
-    }
-
-    const numericPrice = Number(price);
-    const numericStock = Number(stock);
-
-    if (Number.isNaN(numericPrice) || Number.isNaN(numericStock)) {
-        return res.status(400).send('Price and stock must be numbers.');
-    }
-
-    // Create new product object
-    const newProduct = {
-        id: nextProductId++,
-        name,
-        price: numericPrice,
-        stock: numericStock,
-        description
-    };
-
-    // Add to our fake "products" database
-    products.push(newProduct);
-
-    console.log('New product added by admin:', newProduct);
-
-    // After adding, redirect to the admin products list
-    res.redirect('/admin/products');
-});
-
 
 // Admin: apply updates to the product (MySQL)
 app.post('/admin/products/edit/:id', requireAdmin, async (req, res) => {
