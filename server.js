@@ -405,111 +405,121 @@ app.get('/checkout', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
 });
 
-// Dynamic Order Confirmation Page
-app.get('/order-confirmation', (req, res) => {
-    const lastOrderId = req.session.lastOrderId;
+// Order confirmation page (reads last order from MySQL)
+app.get('/order-confirmation', requireLogin, async (req, res) => {
+    try {
+        const lastOrderId = req.session.lastOrderId;
 
-    // If no recent order in session, show a simple message
-    if (!lastOrderId) {
-        return res.send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <title>Order Confirmation</title>
-            </head>
-            <body>
-                <h1>No recent order found</h1>
-                <p>You probably refreshed this page or came here directly.</p>
-                <p><a href="/catalogue">Go back to products</a></p>
-            </body>
-            </html>
-        `);
-    }
+        if (!lastOrderId) {
+            return res.status(400).send('No recent order found.');
+        }
 
-    const order = orders.find(o => o.id === lastOrderId);
+        // Load the order
+        const [orderRows] = await pool.query(
+            'SELECT * FROM orders WHERE id = ?',
+            [lastOrderId]
+        );
 
-    if (!order) {
-        return res.send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <title>Order Confirmation</title>
-            </head>
-            <body>
-                <h1>Order not found</h1>
-                <p>There was a problem locating your order.</p>
-                <p><a href="/catalogue">Go back to products</a></p>
-            </body>
-            </html>
-        `);
-    }
+        if (orderRows.length === 0) {
+            return res.status(404).send('Order not found.');
+        }
 
-    // Build items list HTML
-    let itemsHtml = '';
-    order.items.forEach(item => {
-        itemsHtml += `
-            <li>
-                ${item.productName} (x${item.quantity}) – $${(item.price * item.quantity).toFixed(2)}
-            </li>
+        const order = orderRows[0];
+
+        // Load the order items + product names
+        const [itemRows] = await pool.query(
+            `SELECT oi.product_id, oi.price, oi.quantity, p.name AS productName
+             FROM order_items oi
+             JOIN products p ON oi.product_id = p.id
+             WHERE oi.order_id = ?`,
+            [lastOrderId]
+        );
+
+        // Build HTML for items
+        let itemsHtml = '';
+        itemRows.forEach(item => {
+            const priceNum = Number(item.price);        // convert from string to number
+            const lineTotal = priceNum * item.quantity;
+
+            itemsHtml += `
+                <tr>
+                    <td>${item.productName}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${priceNum.toFixed(2)}</td>
+                    <td>$${lineTotal.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        const orderTotalNum = Number(order.total);      // convert from string to number
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Order Confirmation</title>
+        </head>
+        <body>
+            <header>
+                <h1>NotAmazon</h1>
+                <nav>
+                    <a href="/index.html">Home</a>
+                    <a href="/catalogue">Products</a>
+                    <a href="/cart">Cart</a>
+
+                    <a href="/Login.html" id="login-link">Login</a>
+                    <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                    <form method="POST" action="/logout" id="logout-form"
+                          style="display:none; margin:0; padding:0;">
+                        <button type="submit">Logout</button>
+                    </form>
+                </nav>
+                <p id="user-info"></p>
+            </header>
+
+            <main>
+                <h2>Order Confirmation</h2>
+                <p>Thank you for your purchase! Your order number is <strong>${order.id}</strong>.</p>
+
+                <h3>Shipping To</h3>
+                <p>
+                    ${order.full_name}<br>
+                    ${order.address}<br>
+                    ${order.city}, ${order.province} ${order.postal_code}
+                </p>
+
+                <h3>Items</h3>
+                <table border="1" cellpadding="5" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Line Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml || '<tr><td colspan="4">No items found.</td></tr>'}
+                    </tbody>
+                </table>
+
+                <p><strong>Order Total:</strong> $${orderTotalNum.toFixed(2)}</p>
+
+                <p><a href="/catalogue">← Continue Shopping</a></p>
+            </main>
+
+            <script src="/session-ui.js"></script>
+        </body>
+        </html>
         `;
-    });
 
-    const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Order Confirmation</title>
-    </head>
-    <body>
-        <header>
-            <h1>NotAmazon</h1>
-            <nav>
-                <a href="/index.html">Home</a>
-                <a href="/catalogue">Products</a>
-                <a href="/cart">Cart</a>
-
-                <a href="/Login.html" id="login-link">Login</a>
-                <a href="/signup.html" id="signup-link">Sign Up</a>
-
-                <form method="POST" action="/logout" id="logout-form"
-                      style="display:none; margin:0; padding:0;">
-                    <button type="submit">Logout</button>
-                </form>
-            </nav>
-            <p id="user-info"></p>
-        </header>
-
-        <main>
-            <h2>Order Confirmed!</h2>
-            <p>Thank you for your purchase, ${order.shipping.fullName || order.userName}.</p>
-
-            <h3>Items you bought:</h3>
-            <ul>
-                ${itemsHtml}
-            </ul>
-
-            <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
-
-            <h3>Shipping to:</h3>
-            <p>
-                ${order.shipping.fullName}<br>
-                ${order.shipping.address}<br>
-                ${order.shipping.city} ${order.shipping.province}<br>
-                ${order.shipping.postalCode}
-            </p>
-
-            <p><a href="/catalogue">← Continue Shopping</a></p>
-        </main>
-
-        <script src="/session-ui.js"></script>
-    </body>
-    </html>
-    `;
-
-    res.send(html);
+        res.send(html);
+    } catch (err) {
+        console.error('Error loading order confirmation (DB):', err);
+        res.status(500).send('Error loading order confirmation.');
+    }
 });
 
 // Login form page
@@ -973,53 +983,78 @@ app.post('/cart/remove', (req, res) => {
     res.redirect('/cart');
 });
 
-// Handle checkout form submission
-app.post('/checkout', requireLogin, (req, res) => {
-    console.log('Checkout req.body:', req.body);
-
-    const { fullName, address, city, province, postalCode, cardNumber, expiry, cvv } = req.body;
-
-    const cart = req.session.cart || [];
-    if (cart.length === 0) {
-        return res.status(400).send('Your cart is empty. Add items before checking out.');
-    }
-
-    const user = req.session.user;
-
-    const total = cart.reduce((sum, item) => {
-        return sum + item.price * item.quantity;
-    }, 0);
-
-    const newOrder = {
-        id: nextOrderId++,
-        userEmail: user.email,
-        userName: user.name,
-        items: cart.map(item => ({
-            productId: item.productId,
-            productName: item.productName,
-            price: item.price,
-            quantity: item.quantity
-        })),
-    total,
-        shipping: {
+// Handle checkout form submission (store order in MySQL)
+app.post('/checkout', requireLogin, async (req, res) => {
+    try {
+        // Form fields from checkout.html
+        const {
             fullName,
             address,
             city,
             province,
-            postalCode
-        },
-        createdAt: new Date().toISOString()
-    };
+            postalCode,
+            cardNumber,
+            expiry,
+            cvv
+        } = req.body;
 
-    orders.push(newOrder);
+        // Basic validation
+        if (!fullName || !address || !city || !province || !postalCode) {
+            return res.status(400).send('All shipping fields are required.');
+        }
 
-    // Clear cart and remember last order for confirmation page
-    req.session.cart = [];
-    req.session.lastOrderId = newOrder.id;
+        // Ensure there is a cart in the session
+        const cart = req.session.cart || [];
+        if (cart.length === 0) {
+            return res.status(400).send('Your cart is empty. Add items before checking out.');
+        }
 
-    console.log('New order created:', newOrder);
+        // Logged-in user from session
+        const user = req.session.user;
 
-    res.redirect('/order-confirmation');
+        // Calculate total
+        const total = cart.reduce((sum, item) => {
+            return sum + item.price * item.quantity;
+        }, 0);
+
+        // 1) Insert into orders table
+        const [orderResult] = await pool.query(
+            `INSERT INTO orders
+             (user_id, total, full_name, address, city, province, postal_code)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [user.id, total, fullName, address, city, province, postalCode]
+        );
+
+        const orderId = orderResult.insertId;
+        console.log('New order created with ID:', orderId);
+
+        // 2) Insert order items (one row per cart item)
+        // We’ll build an array of value-tuples: [order_id, product_id, price, quantity]
+        const values = cart.map(item => [
+            orderId,
+            item.productId,
+            item.price,
+            item.quantity
+        ]);
+
+        // Bulk insert into order_items
+        await pool.query(
+            'INSERT INTO order_items (order_id, product_id, price, quantity) VALUES ?',
+            [values]
+        );
+
+        // 3) Clear cart & remember last order ID in session
+        req.session.cart = [];
+        req.session.lastOrderId = orderId;
+
+        console.log('Order items inserted for order:', orderId);
+
+        // 4) Redirect to confirmation page
+        res.redirect('/order-confirmation');
+    } catch (err) {
+        console.error('Error during checkout (DB):', err);
+        res.status(500).send('Error processing checkout.');
+    }
 });
 
 // ------------------------
