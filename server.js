@@ -791,90 +791,93 @@ app.get('/debug/session', (req, res) => {
 // Some are still placeholders, but login/logout now use sessions.
 // ----------------------------------------------------------
 
-// Handle signup form submission
-app.post('/signup', (req, res) => {
-    const { name, email, password, confirmPassword } = req.body;
-    console.log('Signup data received:', req.body);
+// Handle signup form submission (using MySQL users table)
+app.post('/signup', async (req, res) => {
+    try {
+        const { name, email, password, confirmPassword } = req.body;
 
-    // Basic validation: check required fields
-    if (!name || !email || !password || !confirmPassword) {
-        return res.status(400).send('Name, email, password, and confirm password are required.');
+        // Basic validation
+        if (!name || !email || !password) {
+            return res.status(400).send('Name, email, and password are required.');
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).send('Passwords do not match.');
+        }
+
+        // Check if email is already in use
+        const [existing] = await pool.query(
+            'SELECT id FROM users WHERE email = ?',
+            [email]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).send('An account with that email already exists.');
+        }
+
+        // Insert new user as a "customer" into the users table
+        const [result] = await pool.query(
+            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+            [name, email, password, 'customer']   // plain text password for this project
+        );
+
+        const newUserId = result.insertId;
+        console.log('New user created (DB):', { id: newUserId, name, email });
+
+        // Optionally log them in immediately
+        req.session.user = {
+            id: newUserId,
+            name,
+            email,
+            role: 'customer'
+        };
+
+        // Redirect to home (or catalogue) after signup
+        res.redirect('/index.html');
+    } catch (err) {
+        console.error('Error during signup (DB):', err);
+        res.status(500).send('Error during signup.');
     }
-
-    // Check if passwords match
-    if (password !== confirmPassword) {
-        return res.status(400).send('Passwords do not match.');
-    }
-
-    // Check if a user with this email already exists
-    const existingUser = users.find(u => u.email === email);
-    if (existingUser) {
-        return res.status(400).send('An account with this email already exists.');
-    }
-
-    // Create a new user object (role: customer by default)
-    const newUser = {
-        name,
-        email,
-        password,   // plain text for this project ONLY
-        role: 'customer'
-    };
-
-    // Add to our fake "database" of users
-    users.push(newUser);
-
-    console.log('New user created:', newUser);
-
-    // Automatically log the user in after signup
-    req.session.user = {
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role
-    };
-
-    if (!req.session.cart) {
-        req.session.cart = [];
-    }
-
-    // Redirect to home page after successful signup
-    res.redirect('/');
 });
 
-// Handle login form submission
-app.post('/login', (req, res) => {
-    // Extract the email and password that were submitted from the login form
-    const { email, password } = req.body;
-    console.log('Login data received:', req.body);
+// Handle login form submission (using MySQL users table)
+app.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
 
-    // Try to find a user in our fake "users" array with matching email AND password
-    const user = users.find(u => u.email === email && u.password === password);
+        if (!email || !password) {
+            return res.status(400).send('Email and password are required.');
+        }
 
-    // If no matching user is found, login fails
-    if (!user) {
-        console.log('Login failed for:', email);
+        // Look up the user in the database (plain-text password for this project)
+        const [rows] = await pool.query(
+            'SELECT id, name, email, password, role FROM users WHERE email = ? AND password = ?',
+            [email, password]
+        );
 
-        // For now, just send a simple error message and 401 (Unauthorized) status.
-        // Later we could redirect back to /login with an error query parameter.
-        return res.status(401).send('Invalid email or password.');
+        if (rows.length === 0) {
+            // No user found with that email/password
+            return res.status(401).send('Invalid email or password.');
+        }
+
+        const user = rows[0];
+
+        // Save minimal user info in session
+        req.session.user = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        };
+
+        console.log('User logged in (DB):', req.session.user);
+
+        // After login, send them to home or catalogue
+        res.redirect('/index.html');
+    } catch (err) {
+        console.error('Error during login (DB):', err);
+        res.status(500).send('Error during login.');
     }
-
-    // If we get here, we found a matching user.
-    // Store only the basic info we need in the session (do NOT store password).
-    req.session.user = {
-        name: user.name,
-        email: user.email,
-        role: user.role     // "admin" or "customer"
-    };
-
-    // If this user does not have a cart yet in the session, create an empty one.
-    if (!req.session.cart) {
-        req.session.cart = [];
-    }
-
-    console.log('User logged in:', req.session.user);
-
-    // After successful login, redirect to the home page (or wherever you prefer).
-    res.redirect('/');
 });
 
 

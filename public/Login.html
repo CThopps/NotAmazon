@@ -28,20 +28,19 @@
     <h2>Login</h2>
 
     <form method="POST" action="/login">
-        <div>
-            <label for="email">Email:</label>
-            <!-- name="email" is what shows up as req.body.email -->
-            <input type="email" id="email" name="email" required>
-        </div>
+    <label>
+        Email:
+        <input type="email" name="email" required>
+    </label><br>
 
-        <div>
-            <label for="password">Password:</label>
-            <!-- name="password" is what shows up as req.body.password -->
-            <input type="password" id="password" name="password" required>
-        </div>
+    <label>
+        Password:
+        <input type="password" name="password" required>
+    </label><br>
 
-        <button type="submit">Login</button>
-    </form>
+    <button type="submit">Login</button>
+</form>
+
 
     <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
 </main>
