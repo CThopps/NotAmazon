@@ -1,0 +1,215 @@
+/* ---------- Base layout ---------- */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #eaeded; /* Amazon-ish grey */
+    color: #111;
+    line-height: 1.5;
+}
+
+a {
+    color: #0066c0;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Header / Nav ---------- */
+
+header {
+    background-color: #131921;          /* dark Amazon top bar */
+    color: #fff;
+    padding: 12px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+}
+
+nav a {
+    color: #ddd;
+    font-size: 0.95rem;
+}
+
+nav a:hover {
+    color: #fff;
+}
+
+/* Logout form inline in nav */
+nav form {
+    display: inline-block;
+}
+
+/* ---------- Main container ---------- */
+
+main {
+    max-width: 1200px;
+    margin: 20px auto 40px auto;
+    padding: 0 20px;
+}
+
+main h2 {
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+}
+
+/* ---------- Buttons ---------- */
+
+button,
+input[type="submit"] {
+    background-color: #f0c14b;      /* Amazon yellow */
+    color: #111;
+    border: 1px solid #a88734;
+    border-radius: 3px;
+    padding: 6px 12px;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+button:hover,
+input[type="submit"]:hover {
+    background-color: #f5d47a;
+}
+
+/* ---------- Product cards ---------- */
+
+.product {
+    background-color: #fff;
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(15, 17, 17, 0.15);
+}
+
+.product h3,
+.product h2 {
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+}
+
+.product p {
+    margin-bottom: 6px;
+}
+
+.product form {
+    margin-top: 6px;
+}
+
+/* ---------- Catalogue grid (4 per row) ---------- */
+
+#product-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+}
+
+#product-list .product {
+    max-width: 260px;
+    margin: 0 auto;
+}
+
+/* ---------- Home featured grid (3 centered) ---------- */
+
+#featured-products {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+#featured-products .product {
+    max-width: 260px;
+    margin: 0 auto;
+}
+
+/* ---------- Cart & tables ---------- */
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #fff;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f3f3f3;
+}
+
+/* ---------- Forms (login / signup / checkout) ---------- */
+
+form div,
+form label {
+    margin-bottom: 8px;
+    display: block;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    max-width: 350px;
+    padding: 6px 8px;
+    margin-top: 4px;
+    border-radius: 3px;
+    border: 1px solid #a6a6a6;
+}
+
+/* ---------- Responsive tweaks ---------- */
+
+@media (max-width: 1000px) {
+    #product-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 800px) {
+    #product-list,
+    #featured-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 550px) {
+    #product-list,
+    #featured-products {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        padding: 10px 16px;
+    }
+
+    main {
+        padding: 0 12px;
+    }
+}

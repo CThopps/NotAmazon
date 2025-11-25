@@ -132,6 +132,7 @@ app.get('/', async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <title>NotAmazon - Home</title>
+            <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
             <header>
@@ -220,6 +221,7 @@ app.get('/catalogue', async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <title>NotAmazon - Catalogue</title>
+            <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
 
@@ -286,6 +288,7 @@ app.get('/product', async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <title>NotAmazon - ${product.name}</title>
+            <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
             <header>
@@ -386,6 +389,7 @@ app.get('/cart', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <title>NotAmazon - Cart</title>
+        <link rel="stylesheet" href="/styles.css">
     </head>
     <body>
         <header>
@@ -476,6 +480,7 @@ app.get('/order-confirmation', requireLogin, async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <title>Order Confirmation</title>
+            <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
             <header>
@@ -589,6 +594,7 @@ app.get('/admin/products', requireAdmin, async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <title>Admin - Products</title>
+            <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
             <header>
@@ -711,6 +717,7 @@ app.get('/admin/products/edit/:id', requireAdmin, async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <title>Edit Product - ${product.name}</title>
+            <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
 
