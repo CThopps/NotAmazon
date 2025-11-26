@@ -812,11 +812,13 @@ app.post('/signup', async (req, res) => {
 
         // Basic validation
         if (!name || !email || !password) {
-            return res.status(400).send('Name, email, and password are required.');
+            // generic error: missing fields
+            return res.redirect('/signup.html?error=missing');
         }
 
         if (password !== confirmPassword) {
-            return res.status(400).send('Passwords do not match.');
+            // passwords don't match
+            return res.redirect('/signup.html?error=mismatch');
         }
 
         // Check if email is already in use
@@ -826,7 +828,8 @@ app.post('/signup', async (req, res) => {
         );
 
         if (existing.length > 0) {
-            return res.status(400).send('An account with that email already exists.');
+            // email already exists
+            return res.redirect('/signup.html?error=exists');
         }
 
         // Insert new user as a "customer" into the users table
@@ -838,7 +841,7 @@ app.post('/signup', async (req, res) => {
         const newUserId = result.insertId;
         console.log('New user created (DB):', { id: newUserId, name, email });
 
-        // Optionally log them in immediately
+        // Log them in immediately
         req.session.user = {
             id: newUserId,
             name,
@@ -846,11 +849,12 @@ app.post('/signup', async (req, res) => {
             role: 'customer'
         };
 
-        // Redirect to home (or catalogue) after signup
+        // Redirect to home after signup
         res.redirect('/');
     } catch (err) {
         console.error('Error during signup (DB):', err);
-        res.status(500).send('Error during signup.');
+        // generic signup error
+        res.redirect('/signup.html?error=server');
     }
 });
 
@@ -870,8 +874,7 @@ app.post('/login', async (req, res) => {
         );
 
         if (rows.length === 0) {
-            // No user found with that email/password
-            return res.status(401).send('Invalid email or password.');
+            return res.redirect('/Login.html?error=1');
         }
 
         const user = rows[0];

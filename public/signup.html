@@ -4,8 +4,50 @@
     <meta charset="UTF-8">
     <title>NotAmazon - Sign Up</title>
     <link rel="stylesheet" href="/styles.css">
+    <style>
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;              /* hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            padding: 20px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            max-width: 380px;
+            width: 90%;
+        }
+
+        .modal-box h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .modal-box p {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        .modal-actions {
+            text-align: right;
+        }
+
+        .modal-actions .secondary {
+            background-color: #e7e9ec;
+            border: 1px solid #a2a6ac;
+        }
+
+        .modal-actions .secondary:hover {
+            background-color: #d5d7da;
+        }
+    </style>
 </head>
-<script src="session-ui.js"></script>
 <body>
 
 <header>
@@ -48,13 +90,76 @@
 
         <div>
             <label for="confirmPassword">Confirm Password:</label>
-            <input type="password" id="confirmPassword" name="confirmPassword">
+            <input type="password" id="confirmPassword" name="confirmPassword" required>
         </div>
 
         <button type="submit">Sign Up</button>
     </form>
+
+    <p>Already have an account? <a href="/Login.html">Login</a></p>
 </main>
 
-<script src="session-ui.js"></script>
+<!-- Error Modal -->
+<div id="signup-error-modal" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Signup Error</h3>
+        <p id="signup-error-text">There was a problem with your sign up.</p>
+        <div class="modal-actions">
+            <button id="close-signup-modal" class="secondary">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="/session-ui.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const errorCode = params.get('error');
+
+        const modal = document.getElementById('signup-error-modal');
+        const errorText = document.getElementById('signup-error-text');
+        const closeBtn = document.getElementById('close-signup-modal');
+
+        if (errorCode && modal && errorText) {
+            // Pick message based on error code coming from server
+            let message = 'There was a problem with your sign up. Please try again.';
+
+            if (errorCode === 'missing') {
+                message = 'Please fill in all required fields (name, email, and password).';
+            } else if (errorCode === 'mismatch') {
+                message = 'Passwords do not match. Please re-enter them.';
+            } else if (errorCode === 'exists') {
+                message = 'An account with that email already exists. Try logging in instead.';
+            } else if (errorCode === 'server') {
+                message = 'An internal error occurred while creating your account. Please try again later.';
+            }
+
+            errorText.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        if (closeBtn && modal) {
+            closeBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+                // Remove ?error=... from the URL without reloading
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, '', cleanUrl);
+            });
+        }
+
+        // Optional: click outside the modal box to close
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    const cleanUrl = window.location.pathname;
+                    window.history.replaceState({}, '', cleanUrl);
+                }
+            });
+        }
+    });
+</script>
+
 </body>
 </html>
