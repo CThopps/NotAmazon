@@ -1,3 +1,10 @@
+/*
+    * NotAmazon Server
+    * A simple e-commerce platform built with Node.js, Express, and MySQL.
+    * Handles user authentication, product management, shopping cart, and checkout.
+*/
+
+
 // Load the Express framework (makes handling HTTP much easier)
 const express = require('express');
 
@@ -96,12 +103,10 @@ app.get('/', async (req, res) => {
             'SELECT * FROM products ORDER BY RAND() LIMIT 3'
         );
 
-        // (If you prefer the first 3 products instead, use:
-        // 'SELECT * FROM products ORDER BY id LIMIT 3'
-        // )
-
+        // Build HTML for featured products
         let featuredHtml = '';
 
+        // featured products from DB (on home page)
         rows.forEach(prod => {
             featuredHtml += `
                 <article class="product">
@@ -126,6 +131,7 @@ app.get('/', async (req, res) => {
             `;
         });
 
+        // Build the full HTML page (home page)
         const html = `
         <!DOCTYPE html>
         <html lang="en">
@@ -170,6 +176,7 @@ app.get('/', async (req, res) => {
         </html>
         `;
 
+        // Send the HTML page as the response
         res.send(html);
     } catch (err) {
         console.error('Error loading featured products from DB:', err);
@@ -182,7 +189,6 @@ app.get('/index.html', (req, res) => {
     res.redirect('/');
 });
 
-// Dynamic Catalogue Page
 // Dynamic Catalogue Page (now using MySQL instead of in-memory array)
 app.get('/catalogue', async (req, res) => {
     try {
@@ -191,6 +197,8 @@ app.get('/catalogue', async (req, res) => {
 
         let productHtml = "";
 
+        // Build HTML for each product
+        // products from DB (on catalogue page)
         rows.forEach(prod => {
             productHtml += `
                 <article class="product">
@@ -215,6 +223,7 @@ app.get('/catalogue', async (req, res) => {
             `;
         });
 
+        // Build the full HTML page (catalogue page)
         const html = `
         <!DOCTYPE html>
         <html lang="en">
@@ -256,6 +265,7 @@ app.get('/catalogue', async (req, res) => {
         </html>
         `;
 
+        // Send the HTML page as the response
         res.send(html);
     } catch (err) {
         console.error('Error loading products from DB:', err);
@@ -269,6 +279,7 @@ app.get('/product', async (req, res) => {
         // Read ?id= from URL: /product?id=1
         const id = Number(req.query.id);
 
+        // Validate the product ID
         if (!id) {
             return res.status(400).send('Product ID is required.');
         }
@@ -276,10 +287,12 @@ app.get('/product', async (req, res) => {
         // Get this product from the database
         const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
 
+        // Check if the product exists
         if (rows.length === 0) {
             return res.status(404).send('Product not found.');
         }
 
+        // Build the full HTML page (product details page)
         const product = rows[0];
 
         const html = `
@@ -335,6 +348,7 @@ app.get('/product', async (req, res) => {
         </html>
         `;
 
+        // Send the HTML page as the response
         res.send(html);
     } catch (err) {
         console.error('Error loading product from DB:', err);
@@ -342,12 +356,15 @@ app.get('/product', async (req, res) => {
     }
 });
 
+// View Cart Page (dynamic, reads cart from session)
 app.get('/cart', (req, res) => {
+    // Get cart from session (or empty array if none)
     const cart = req.session.cart || [];
 
     let total = 0;
     let cartItemsHtml = '';
 
+    // check if cart is empty
     if (cart.length === 0) {
         cartItemsHtml = '<p>Your cart is empty.</p>';
     } else {
@@ -359,6 +376,7 @@ app.get('/cart', (req, res) => {
 
             total += safePrice * item.quantity;
 
+            // Build HTML for each cart item
             cartItemsHtml += `
                 <article>
                     <h3>${item.productName || 'Unknown Product'}</h3>
@@ -383,6 +401,7 @@ app.get('/cart', (req, res) => {
         });
     }
 
+    // Build the full HTML page (cart page)
     const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -431,6 +450,7 @@ app.get('/order-confirmation', requireLogin, async (req, res) => {
     try {
         const lastOrderId = req.session.lastOrderId;
 
+        // Validate the last order ID
         if (!lastOrderId) {
             return res.status(400).send('No recent order found.');
         }
@@ -441,6 +461,7 @@ app.get('/order-confirmation', requireLogin, async (req, res) => {
             [lastOrderId]
         );
 
+        // Check if the order exists
         if (orderRows.length === 0) {
             return res.status(404).send('Order not found.');
         }
@@ -474,6 +495,7 @@ app.get('/order-confirmation', requireLogin, async (req, res) => {
 
         const orderTotalNum = Number(order.total);      // convert from string to number
 
+        // Build the full HTML page (order confirmation page)
         const html = `
         <!DOCTYPE html>
         <html lang="en">
@@ -565,6 +587,7 @@ app.get('/admin/products', requireAdmin, async (req, res) => {
 
         let rowsHtml = '';
 
+        // Build HTML table rows for each product
         rows.forEach(p => {
             rowsHtml += `
                 <tr>
@@ -588,6 +611,7 @@ app.get('/admin/products', requireAdmin, async (req, res) => {
             `;
         });
 
+        // Build the full HTML page (admin products list)
         const html = `
         <!DOCTYPE html>
         <html lang="en">
@@ -667,6 +691,7 @@ app.post('/admin/products/add', requireAdmin, async (req, res) => {
             return res.status(400).send('All fields are required.');
         }
 
+        // Convert price and stock to numbers
         const priceNum = Number(price);
         const stockNum = Number(stock);
 
@@ -680,6 +705,7 @@ app.post('/admin/products/add', requireAdmin, async (req, res) => {
             [name, priceNum, stockNum, description]
         );
 
+        // Log the new product ID
         console.log('Admin added product with ID:', result.insertId);
 
         // Go back to admin product list
@@ -696,21 +722,26 @@ app.get('/admin/products/edit/:id', requireAdmin, async (req, res) => {
     try {
         const productId = Number(req.params.id);
 
+        // Validate product ID
         if (!productId) {
             return res.status(400).send('Product ID is required.');
         }
 
+        // Load product from DB
         const [rows] = await pool.query(
             'SELECT * FROM products WHERE id = ?',
             [productId]
         );
 
+        // Check if the product exists
         if (rows.length === 0) {
             return res.status(404).send('Product not found.');
         }
 
+        // Get the product
         const product = rows[0];
 
+        // Build the full HTML page (edit product page)
         const html = `
         <!DOCTYPE html>
         <html lang="en">
@@ -790,6 +821,7 @@ app.get('/debug/session', (req, res) => {
         req.session.views++;
     }
 
+    // Return session debug info as JSON
     res.json({
         message: 'Session debug info',
         sessionId: req.sessionID,
@@ -863,6 +895,7 @@ app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Basic validation
         if (!email || !password) {
             return res.status(400).send('Email and password are required.');
         }
@@ -873,10 +906,12 @@ app.post('/login', async (req, res) => {
             [email, password]
         );
 
+        // Check if user exists
         if (rows.length === 0) {
             return res.redirect('/Login.html?error=1');
         }
 
+        // Get the user
         const user = rows[0];
 
         // Save minimal user info in session
@@ -889,6 +924,7 @@ app.post('/login', async (req, res) => {
 
         console.log('User logged in (DB):', req.session.user);
 
+        // Redirect based on role
         if (user.role === 'admin') {
             res.redirect('/admin/products');
         } else {
@@ -926,6 +962,7 @@ app.post('/cart/add', async (req, res) => {
     try {
         const { productId, quantity } = req.body;
 
+        // Validate product ID and quantity
         const id = Number(productId);
         const qty = Number(quantity) || 1;
 
@@ -939,10 +976,12 @@ app.post('/cart/add', async (req, res) => {
             [id]
         );
 
+        // Check if product exists
         if (rows.length === 0) {
             return res.status(400).send('Product not found.');
         }
 
+        // Get the product
         const product = rows[0];
 
         // (Optional) basic stock check – you can relax this if you want
@@ -958,6 +997,7 @@ app.post('/cart/add', async (req, res) => {
         // See if item already in cart
         const existingItem = req.session.cart.find(item => item.productId === product.id);
 
+        // Update quantity if item exists, otherwise add new item
         if (existingItem) {
             existingItem.quantity += qty;
         } else {
@@ -982,6 +1022,7 @@ app.post('/cart/add', async (req, res) => {
 app.post('/cart/remove', (req, res) => {
     const { productId } = req.body;
 
+    // Make sure the cart exists
     if (!req.session.cart) {
         req.session.cart = [];
     }
@@ -1004,6 +1045,7 @@ app.post('/cart/update', (req, res) => {
         req.session.cart = [];
     }
 
+    // Convert newQuantity to a number
     const qty = Number(newQuantity);
 
     // Find the item in the cart
@@ -1114,30 +1156,38 @@ app.post('/checkout', requireLogin, async (req, res) => {
 // Admin: apply updates to the product (MySQL)
 app.post('/admin/products/edit/:id', requireAdmin, async (req, res) => {
     try {
+        // Validate product ID
         const productId = Number(req.params.id);
 
+        // Validate product ID
         if (!productId) {
             return res.status(400).send('Product ID is required.');
         }
 
+        // Load product from DB
         const { name, price, stock, description } = req.body;
 
+        // Basic validation
         if (!name || !price || !stock || !description) {
             return res.status(400).send('All fields are required.');
         }
 
+        // Convert price and stock to numbers
         const priceNum = Number(price);
         const stockNum = Number(stock);
 
+        // Validate price and stock numbers
         if (Number.isNaN(priceNum) || Number.isNaN(stockNum)) {
             return res.status(400).send('Price and stock must be numbers.');
         }
 
+        // Update the product in the database
         const [result] = await pool.query(
             'UPDATE products SET name = ?, price = ?, stock = ?, description = ? WHERE id = ?',
             [name, priceNum, stockNum, description, productId]
         );
 
+        // Check if the update affected any rows
         if (result.affectedRows === 0) {
             return res.status(404).send('Product not found.');
         }
@@ -1154,17 +1204,21 @@ app.post('/admin/products/edit/:id', requireAdmin, async (req, res) => {
 // Admin: delete a product (MySQL)
 app.post('/admin/products/delete/:id', requireAdmin, async (req, res) => {
     try {
+        // Validate product ID
         const productId = Number(req.params.id);
 
+        // Validate product ID
         if (!productId) {
             return res.status(400).send('Product ID is required.');
         }
 
+        // Delete the product from the database
         const [result] = await pool.query(
             'DELETE FROM products WHERE id = ?',
             [productId]
         );
 
+        // Check if the delete affected any rows
         if (result.affectedRows === 0) {
             // No product with that ID found
             return res.status(404).send('Product not found.');
