@@ -379,22 +379,28 @@ app.get('/cart', (req, res) => {
             // Build HTML for each cart item
             cartItemsHtml += `
                 <article>
-                    <h3>${item.productName || 'Unknown Product'}</h3>
-                    <p>Price: $${safePrice.toFixed(2)}</p>
-                    
-                    <form method="POST" action="/cart/update">
-                        <input type="hidden" name="productId" value="${item.productId}">
-                        <label>
-                            Qty:
-                            <input type="number" name="newQuantity" value="${item.quantity}" min="1">
-                        </label>
-                        <button type="submit">Update</button>
-                    </form>
+                    <div>
+                        <h3>${item.productName || 'Unknown Product'}</h3>
+                        <p>Price: $${safePrice.toFixed(2)}</p>
+                    </div>
 
-                    <form method="POST" action="/cart/remove">
-                        <input type="hidden" name="productId" value="${item.productId}">
-                        <button type="submit">Remove</button>
-                    </form>
+                    <div class="cart-actions">
+                        <!-- Update quantity -->
+                        <form method="POST" action="/cart/update">
+                            <input type="hidden" name="productId" value="${item.productId}">
+                            <label>
+                                Qty:
+                                <input type="number" name="newQuantity" value="${item.quantity}" min="1">
+                            </label>
+                            <button type="submit">Update</button>
+                        </form>
+
+                        <!-- Remove item -->
+                        <form method="POST" action="/cart/remove">
+                            <input type="hidden" name="productId" value="${item.productId}">
+                            <button type="submit">Remove</button>
+                        </form>
+                    </div>
                 </article>
                 <hr>
             `;
@@ -409,10 +415,62 @@ app.get('/cart', (req, res) => {
         <meta charset="UTF-8">
         <title>NotAmazon - Cart</title>
         <link rel="stylesheet" href="/styles.css">
+        <style>
+            /* --- Modal styles just for this page --- */
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: none;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+
+            .modal-box {
+                background: #ffffff;
+                padding: 20px 24px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                max-width: 380px;
+                width: 90%;
+            }
+
+            .modal-box h3 {
+                margin-top: 0;
+                margin-bottom: 8px;
+            }
+
+            .modal-box p {
+                margin-top: 0;
+                margin-bottom: 16px;
+            }
+
+            .modal-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+        </style>
     </head>
     <body>
         <header>
-            <!-- your header/nav stuff here, same as before -->
+            <h1>NotAmazon</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/catalogue">Products</a>
+                <a href="/cart">Cart</a>
+
+                <a href="/admin/products" id="admin-link" style="display:none;">Admin</a>
+
+                <a href="/Login.html" id="login-link">Login</a>
+                <a href="/signup.html" id="signup-link">Sign Up</a>
+
+                <form method="POST" action="/logout" id="logout-form" style="display:none; margin:0;">
+                    <button type="submit">Logout</button>
+                </form>
+            </nav>
+            <p id="user-info"></p>
         </header>
 
         <main>
@@ -425,12 +483,76 @@ app.get('/cart', (req, res) => {
 
             <p><a href="/catalogue">← Continue Shopping</a></p>
 
-            <form method="GET" action="/checkout">
-                <button type="submit">Proceed to Checkout</button>
-            </form>
+            <button type="button" id="checkout-button">Proceed to Checkout</button>
         </main>
 
+        <!-- Login-required modal -->
+        <div id="login-required-modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3>Login Required</h3>
+                <p>You must be logged in to proceed to checkout.</p>
+                <div class="modal-actions">
+                    <button id="close-login-modal" class="secondary">Close</button>
+                    <a href="/Login.html">
+                        <button type="button" class="btn-primary">Go to Login</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <script src="/session-ui.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const checkoutBtn = document.getElementById('checkout-button');
+                const modal = document.getElementById('login-required-modal');
+                const closeBtn = document.getElementById('close-login-modal');
+
+                if (!checkoutBtn || !modal) return;
+
+                checkoutBtn.addEventListener('click', async () => {
+                    try {
+                        const res = await fetch('/debug/session', {
+                            headers: { 'Accept': 'application/json' }
+                        });
+
+                        if (!res.ok) {
+                            // If debug/session fails, just send them to login
+                            window.location.href = '/Login.html';
+                            return;
+                        }
+
+                        const data = await res.json();
+
+                        if (data.user) {
+                            // Logged in → go to checkout
+                            window.location.href = '/checkout';
+                        } else {
+                            // Not logged in → show modal
+                            modal.style.display = 'flex';
+                        }
+                    } catch (err) {
+                        console.error('Error checking session for checkout:', err);
+                        // Fallback: send to login
+                        window.location.href = '/Login.html';
+                    }
+                });
+
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        modal.style.display = 'none';
+                    });
+                }
+
+                // Click outside modal box to close
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        </script>
     </body>
     </html>
     `;
