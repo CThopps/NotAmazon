@@ -1,168 +1,254 @@
-/* ---------- Base layout ---------- */
+/* ===========================
+   GLOBAL: Layout & Typography
+   =========================== */
 
-*,
-*::before,
-*::after {
+* {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
 body {
+    margin: 0;
     font-family: Arial, Helvetica, sans-serif;
-    background-color: #eaeded; /* Amazon-ish grey */
+    background-color: #eaeded;          /* Amazon-style grey */
     color: #111;
-    line-height: 1.5;
 }
 
-a {
-    color: #0066c0;
-    text-decoration: none;
+/* Main content wrapper */
+main {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 16px;
 }
 
-a:hover {
-    text-decoration: underline;
-}
-
-/* ---------- Header / Nav ---------- */
+/* ===========================
+   HEADER & NAVIGATION (all pages)
+   =========================== */
 
 header {
-    background-color: #131921;          /* dark Amazon top bar */
-    color: #fff;
-    padding: 12px 40px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    background-color: #131921;          /* Amazon dark blue */
+    color: white;
+    padding: 10px 16px;
 }
 
 header h1 {
-    font-size: 1.6rem;
-    font-weight: 700;
+    margin: 0;
+    font-size: 24px;
 }
 
 nav {
+    margin-top: 8px;
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 10px;
     align-items: center;
 }
 
 nav a {
-    color: #ddd;
-    font-size: 0.95rem;
+    color: white;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #232f3e;          /* slightly lighter */
 }
 
 nav a:hover {
-    color: #fff;
+    background-color: #37475a;
 }
 
-/* Logout form inline in nav */
 nav form {
-    display: inline-block;
+    margin: 0;
 }
 
-/* ---------- Main container ---------- */
-
-main {
-    max-width: 1200px;
-    margin: 20px auto 40px auto;
-    padding: 0 20px;
+nav button {
+    background-color: #232f3e;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
 }
 
-main h2 {
-    font-size: 1.6rem;
-    margin-bottom: 16px;
+nav button:hover {
+    background-color: #37475a;
 }
 
-/* ---------- Buttons ---------- */
+#user-info {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #d5d9d9;
+}
+
+/* ===========================
+   GLOBAL BUTTON STYLE
+   (applies everywhere unless overridden)
+   =========================== */
 
 button,
-input[type="submit"] {
-    background-color: #f0c14b;      /* Amazon yellow */
-    color: #111;
+.btn-primary {
+    background-color: #f0c14b;
     border: 1px solid #a88734;
-    border-radius: 3px;
-    padding: 6px 12px;
-    font-size: 0.95rem;
+    padding: 0.45rem 1rem;
+    border-radius: 4px;
     cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    min-width: 120px;
+    text-align: center;
 }
 
 button:hover,
-input[type="submit"]:hover {
-    background-color: #f5d47a;
+.btn-primary:hover {
+    background-color: #e2b33c;
 }
 
-/* ---------- Product cards ---------- */
+/* Secondary/grey buttons (if you want to apply manually) */
+button.secondary {
+    background-color: #e7e9ec;
+    border-color: #a2a6ac;
+}
 
+button.secondary:hover {
+    background-color: #d5d7da;
+}
+
+/* ===========================
+   PRODUCT LISTS (Catalogue & Home Featured)
+   =========================== */
+
+/* Container for product lists */
+#product-list,
+#featured-products {
+    display: flex;
+    flex-direction: column;   /* one card per row */
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 2rem auto;
+}
+
+/* Product card as a horizontal row */
 .product {
-    background-color: #fff;
-    border-radius: 6px;
-    padding: 16px;
-    box-shadow: 0 2px 4px rgba(15, 17, 17, 0.15);
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    padding: 1.25rem 1.5rem;
+
+    display: flex;            /* horizontal layout */
+    align-items: flex-start;
+    gap: 1.5rem;
 }
 
-.product h3,
-.product h2 {
-    font-size: 1.3rem;
-    margin-bottom: 8px;
+/* Product title & text */
+.product h2,
+.product h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
 }
 
 .product p {
-    margin-bottom: 6px;
+    margin: 0.25rem 0;
 }
 
+.product strong {
+    font-weight: 600;
+}
+
+/* Let text area expand */
+.product h2,
+.product h3,
+.product p {
+    flex: 1 1 auto;
+}
+
+/* Forms on the right side (View Details / Add to Cart) */
 .product form {
-    margin-top: 6px;
+    margin: 0;
 }
 
-/* ---------- Catalogue grid (4 per row) ---------- */
-
-#product-list {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 24px;
+/* First form (View Details) gets pushed to the far right */
+.product form:first-of-type {
+    margin-left: auto;
 }
 
-#product-list .product {
-    max-width: 260px;
-    margin: 0 auto;
+/* Space between the two product buttons */
+.product form + form {
+    margin-left: 0.5rem;
 }
 
-/* ---------- Home featured grid (3 centered) ---------- */
-
-#featured-products {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    max-width: 900px;
-    margin: 0 auto;
+/* Fix the two action forms to same width & center buttons */
+.product form:nth-of-type(1),
+.product form:nth-of-type(2) {
+    flex: 0 0 140px;      /* fixed width column */
+    display: flex;
+    justify-content: center;
 }
 
-#featured-products .product {
-    max-width: 260px;
-    margin: 0 auto;
+/* ===========================
+   CART PAGE (layout of items & buttons)
+   =========================== */
+
+/* Cart main heading */
+main h2 {
+    margin-top: 0;
 }
 
-/* ---------- Cart & tables ---------- */
+/* Each cart item card */
+main section article {
+    background-color: #ffffff;
+    border-radius: 6px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(15, 17, 17, 0.12);
+    margin-bottom: 10px;
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-    background-color: #fff;
+    /* Horizontal layout: text on left, actions on right */
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
 }
 
-th,
-td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
+/* Text section (product name, price, quantity text) */
+main section article h3,
+main section article p {
+    margin: 4px 0;
 }
 
-th {
-    background-color: #f3f3f3;
+/* Right side wrapper for Update + Remove */
+.cart-actions {
+    display: flex;
+    flex-wrap: wrap;          /* so they wrap nicely on small screens */
+    gap: 8px;
+    align-items: center;
 }
 
-/* ---------- Forms (login / signup / checkout) ---------- */
+/* Each form (Update / Remove) in cart actions */
+.cart-actions form {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Quantity input in cart: keep it narrow */
+.cart-actions input[type="number"] {
+    width: 60px;
+}
+
+/* Slightly tighter button for remove (optional) */
+form[action="/cart/remove"] button {
+    min-width: 250px;
+    margin-top: 15px;
+}
+
+form[action="/cart/update"] button {
+    min-width: 250px;
+    margin-top: 15px;
+}
+
+/* ===========================
+   FORMS (Login, Signup, Checkout, Admin)
+   =========================== */
 
 form div,
 form label {
@@ -176,40 +262,66 @@ input[type="password"],
 input[type="number"],
 select,
 textarea {
-    width: 100%;
-    max-width: 350px;
     padding: 6px 8px;
-    margin-top: 4px;
-    border-radius: 3px;
-    border: 1px solid #a6a6a6;
+    border-radius: 4px;
+    border: 1px solid #a2a6ac;
+    width: 100%;
+    max-width: 320px;
+    font-size: 14px;
 }
 
-/* ---------- Responsive tweaks ---------- */
+/* ===========================
+   TABLE STYLING (Admin products & order summary)
+   =========================== */
 
-@media (max-width: 1000px) {
-    #product-list {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #ffffff;
 }
 
-@media (max-width: 800px) {
-    #product-list,
-    #featured-products {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+th, td {
+    padding: 8px 10px;
+    border: 1px solid #d5d9d9;
+    text-align: left;
 }
 
-@media (max-width: 550px) {
-    #product-list,
-    #featured-products {
-        grid-template-columns: 1fr;
+th {
+    background-color: #f3f3f3;
+}
+
+/* ===========================
+   RESPONSIVE TWEAKS (small screens)
+   =========================== */
+
+@media (max-width: 700px) {
+
+    /* Product cards stack vertically on small screens */
+    .product {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
-    header {
-        padding: 10px 16px;
+    .product form:first-of-type {
+        margin-left: 0;  /* don’t push to right on small screens */
     }
 
-    main {
-        padding: 0 12px;
+    .product form {
+        margin-top: 0.4rem;
+    }
+
+    .product form + form {
+        margin-left: 0;   /* stack buttons instead of side-by-side if needed */
+    }
+
+    /* Cart items: allow wrapping */
+    main section article {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cart-actions {
+        align-self: stretch;
+        justify-content: flex-start;
     }
 }

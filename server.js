@@ -363,7 +363,7 @@ app.get('/cart', (req, res) => {
                 <article>
                     <h3>${item.productName || 'Unknown Product'}</h3>
                     <p>Price: $${safePrice.toFixed(2)}</p>
-
+                    
                     <form method="POST" action="/cart/update">
                         <input type="hidden" name="productId" value="${item.productId}">
                         <label>
@@ -990,6 +990,49 @@ app.post('/cart/remove', (req, res) => {
 
     res.redirect('/cart');
 });
+
+// Update item quantity in the cart
+// Update quantity of an item in the cart
+app.post('/cart/update', (req, res) => {
+    const { productId, newQuantity } = req.body;
+
+    // Make sure the cart exists
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+
+    const qty = Number(newQuantity);
+
+    // Find the item in the cart
+    const item = req.session.cart.find(
+        (i) => i.productId == productId  // loose == on purpose since productId may be string
+    );
+
+    // If item not found, just go back to cart
+    if (!item) {
+        console.log('Tried to update item not in cart:', productId);
+        return res.redirect('/cart');
+    }
+
+    // If quantity is invalid or < 1, treat as "remove"
+    if (Number.isNaN(qty) || qty < 1) {
+        req.session.cart = req.session.cart.filter(
+            (i) => i.productId != productId
+        );
+        console.log('Removed item by update (qty < 1):', productId);
+    } else {
+        // Otherwise update quantity
+        item.quantity = qty;
+        console.log('Updated cart item quantity:', {
+            productId,
+            quantity: item.quantity
+        });
+    }
+
+    // Go back to the cart page
+    res.redirect('/cart');
+});
+
 
 // Handle checkout form submission (store order in MySQL)
 app.post('/checkout', requireLogin, async (req, res) => {
